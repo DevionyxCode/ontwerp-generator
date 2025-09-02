@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Devionyx Generator</title>
+<style>
+    body, html {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f4f4f9;
+        color: #333;
+        overflow: hidden;
+    }
+
+    /* Header */
+    header {
+        background-color: #1e1e2f;
+        color: #fff;
+        padding: 15px 30px;
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    header h1 {
+        margin: 0;
+        font-size: 22px;
+    }
+
+    nav {
+        display: flex;
+        gap: 15px;
+        margin-left: 20px;
+    }
+
+    nav a {
+        color: #fff;
+        text-decoration: none;
+        padding: 8px 12px;
+        border-radius: 5px;
+        transition: background 0.3s;
+    }
+
+    nav a:hover {
+        background-color: #39549f;
+    }
+
+    .header-right {
+        margin-left: auto;
+    }
+
+    /* Fullscreen iframe */
+    #drawioContainer {
+        width: 100vw;
+        height: calc(100vh - 65px); /* header hoogte */
+    }
+
+    #drawioIframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+
+    /* Modal */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.5);
+        justify-content: center;
+        align-items: center;
+    }
+
+    .modal-content {
+        background-color: #fff;
+        padding: 25px;
+        border-radius: 10px;
+        width: 80%;
+        max-width: 800px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    textarea {
+        width: 100%;
+        height: 200px;
+        padding: 15px;
+        font-family: monospace;
+        font-size: 14px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        resize: vertical;
+    }
+
+    .btn {
+        padding: 12px 25px;
+        font-size: 16px;
+        background-color: #4b6cb7;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        align-self: flex-start;
+    }
+
+    .btn:hover {
+        background-color: #39549f;
+    }
+
+</style>
+</head>
+<body>
+
+<header>
+    <h1>Devionyx Generator - erd</h1>
+    <nav>
+        <a href="/">Home</a>
+        <a href="/erd">ERD</a>
+        <a href="/classdiagram">Class Diagram</a>
+        <a href="/userstories">Userstories</a>
+        <a href="/scrumboard">Scrumboard</a>
+    </nav>
+    <div class="header-right">
+        <button class="btn" id="openModalBtn">Generate</button>
+    </div>
+</header>
+
+<div id="drawioContainer">
+    <iframe id="drawioIframe"
+        src="https://embed.diagrams.net/?embed=1&ui=atlas&spin=1&proto=json&noSaveBtn=1&noExitBtn=1&saveAndExit=0&ui=dark">
+    </iframe>
+</div>
+
+<!-- Modal -->
+<div class="modal" id="jsonModal">
+    <div class="modal-content">
+        <h2>JSON Input</h2>
+        <textarea id="jsonInput">
+[
+  {
+    "title": "Speler",
+    "fields": [
+      {"type": "PK", "name": "SpelerID", "datatype": "INT", "not_null": true, "unique": true, "auto_increment": true},
+      {"type": "", "name": "Gebruikersnaam", "datatype": "VARCHAR(100)", "not_null": true, "unique": true},
+      {"type": "", "name": "UUID", "datatype": "CHAR(36)", "not_null": true, "unique": true},
+      {"type": "", "name": "EersteLogin", "datatype": "DATETIME", "not_null": true},
+      {"type": "", "name": "LaatsteLogin", "datatype": "DATETIME", "not_null": false},
+      {"type": "", "name": "IsBanned", "datatype": "BOOLEAN", "not_null": true},
+      {"type": "", "name": "Ervaring", "datatype": "INT", "not_null": true},
+      {"type": "", "name": "Level", "datatype": "INT", "not_null": true},
+      {"type": "", "name": "Health", "datatype": "FLOAT", "not_null": true},
+      {"type": "", "name": "Mana", "datatype": "FLOAT", "not_null": true}
+    ]
+  },
+    {
+    "title": "Wereld",
+    "fields": [
+      {"type": "PK", "name": "WereldID", "datatype": "INT", "not_null": true, "unique": true, "auto_increment": true},
+      {"type": "", "name": "Naam", "datatype": "VARCHAR(100)", "not_null": true, "unique": true},
+      {"type": "", "name": "Seed", "datatype": "BIGINT", "not_null": true},
+      {"type": "", "name": "Type", "datatype": "VARCHAR(50)", "not_null": true, "default": "Overworld"},
+      {"type": "", "name": "CreatieDatum", "datatype": "DATETIME", "not_null": false},
+      {"type": "", "name": "MaxSpelers", "datatype": "INT", "not_null": true, "default": 20},
+      {"type": "", "name": "Moeilijkheidsgraad", "datatype": "VARCHAR(20)", "not_null": true, "default": "normal"},
+      {"type": "", "name": "IsPvPEnabled", "datatype": "BOOLEAN", "not_null": true, "default": true},
+      {"type": "", "name": "IsNetherEnabled", "datatype": "BOOLEAN", "not_null": true, "default": true},
+      {"type": "", "name": "IsEndEnabled", "datatype": "BOOLEAN", "not_null": true, "default": true},
+      {"type": "", "name": "MaxBouwHoogte", "datatype": "INT", "not_null": true, "default": 256},
+      {"type": "", "name": "IsDagNachtCycliAan", "datatype": "BOOLEAN", "not_null": true, "default": true},
+      {"type": "", "name": "IsWeerAan", "datatype": "BOOLEAN", "not_null": true, "default": true},
+      {"type": "", "name": "IsVuurVerspreidingAan", "datatype": "BOOLEAN", "not_null": true, "default": true},
+      {"type": "", "name": "IsMobSpawningAan", "datatype": "BOOLEAN", "not_null": true, "default": true},
+      {"type": "", "name": "IsBlokkenVeranderenAan", "datatype": "BOOLEAN", "not_null": true, "default": true},
+      {"type": "", "name": "IsExplosiesAan", "datatype": "BOOLEAN", "not_null": true, "default": true},
+      {"type": "", "name": "IsEntityGriefingAan", "datatype": "BOOLEAN", "not_null": true, "default": true},
+      {"type": "", "name": "IsCheatsAan", "datatype": "BOOLEAN", "not_null": true, "default": false},
+      {"type": "", "name": "StartSpawnX", "datatype": "INT", "not_null": true, "default": 0},
+      {"type": "", "name": "StartSpawnY", "datatype": "INT", "not_null": true, "default": 64},
+      {"type": "", "name": "StartSpawnZ", "datatype": "INT", "not_null": true, "default": 0},
+      {"type": "", "name": "IsAnimalSpawningAan", "datatype": "BOOLEAN", "not_null": true, "default": true},
+      {"type": "", "name": "IsAutoSaveAan", "datatype": "BOOLEAN", "not_null": true, "default": true},
+      {"type": "", "name": "IsVeiligSpawnPunt", "datatype": "BOOLEAN", "not_null": true, "default": true},
+      {"type": "", "name": "SpawnBeschermingRadius", "datatype": "INT", "not_null": true, "default": 16},
+      {"type": "", "name": "TijdVanDag", "datatype": "BIGINT", "not_null": true, "default": 0},
+      {"type": "", "name": "IsVeilig", "datatype": "BOOLEAN", "not_null": true, "default": true},
+      {"type": "", "name": "IsLichtningsVerschijnselenAan", "datatype": "BOOLEAN", "not_null": true, "default": true},
+      {"type": "", "name": "IsAfbrekenAan", "datatype": "BOOLEAN", "not_null": true, "default": true}
+    ]
+  },
+  {
+    "title": "Item",
+    "fields": [
+      {"type": "PK", "name": "ItemID", "datatype": "INT", "not_null": true, "unique": true, "auto_increment": true},
+      {"type": "", "name": "Naam", "datatype": "VARCHAR(100)", "not_null": true},
+      {"type": "", "name": "ItemType", "datatype": "VARCHAR(50)", "not_null": true},
+      {"type": "", "name": "MaxStack", "datatype": "INT", "not_null": true},
+      {"type": "", "name": "Durability", "datatype": "INT", "not_null": false}
+    ]
+  },
+  {
+    "title": "SpelerInventaris",
+    "fields": [
+      {"type": "PK", "name": "InventarisID", "datatype": "INT", "not_null": true, "unique": true, "auto_increment": true},
+      {"type": "FK", "name": "SpelerID", "datatype": "INT", "not_null": true, "unique": true, "references": {"table": "Speler", "field": "SpelerID"}},
+      {"type": "FK", "name": "ItemID", "datatype": "INT", "not_null": true, "references": {"table": "Item", "field": "ItemID"}},
+      {"type": "", "name": "Aantal", "datatype": "INT", "not_null": true},
+      {"type": "", "name": "PositieInInventaris", "datatype": "INT", "not_null": true}
+    ]
+  },
+  {
+    "title": "Positie",
+    "fields": [
+      {"type": "PK", "name": "PositieID", "datatype": "INT", "not_null": true, "unique": true, "auto_increment": true},
+      {"type": "FK", "name": "SpelerID", "datatype": "INT", "not_null": true, "references": {"table": "Speler", "field": "SpelerID"}},
+      {"type": "FK", "name": "WereldID", "datatype": "INT", "not_null": true, "references": {"table": "Wereld", "field": "WereldID"}},
+      {"type": "", "name": "X", "datatype": "FLOAT", "not_null": true},
+      {"type": "", "name": "Y", "datatype": "FLOAT", "not_null": true},
+      {"type": "", "name": "Z", "datatype": "FLOAT", "not_null": true},
+      {"type": "", "name": "Rotatie", "datatype": "FLOAT", "not_null": false},
+      {"type": "", "name": "Timestamp", "datatype": "DATETIME", "not_null": true}
+    ]
+  },
+  {
+    "title": "Ban",
+    "fields": [
+      {"type": "PK", "name": "BanID", "datatype": "INT", "not_null": true, "unique": true, "auto_increment": true},
+      {"type": "FK", "name": "SpelerID", "datatype": "INT", "not_null": true, "references": {"table": "Speler", "field": "SpelerID"}},
+      {"type": "", "name": "Reden", "datatype": "VARCHAR(255)", "not_null": true},
+      {"type": "", "name": "StartDatum", "datatype": "DATETIME", "not_null": true},
+      {"type": "", "name": "EindDatum", "datatype": "DATETIME", "not_null": false},
+      {"type": "", "name": "Permanent", "datatype": "BOOLEAN", "not_null": true}
+    ]
+  },
+  {
+    "title": "CraftingRecept",
+    "fields": [
+      {"type": "PK", "name": "ReceptID", "datatype": "INT", "not_null": true, "unique": true, "auto_increment": true},
+      {"type": "FK", "name": "ResultaatItemID", "datatype": "INT", "not_null": true, "references": {"table": "Item", "field": "ItemID"}},
+      {"type": "", "name": "Aantal", "datatype": "INT", "not_null": true},
+      {"type": "", "name": "Beschrijving", "datatype": "TEXT", "not_null": false}
+    ]
+  },
+  {
+    "title": "CraftingReceptIngredient",
+    "fields": [
+      {"type": "PK", "name": "ReceptIngredientID", "datatype": "INT", "not_null": true, "unique": true, "auto_increment": true},
+      {"type": "FK", "name": "ReceptID", "datatype": "INT", "not_null": true, "references": {"table": "CraftingRecept", "field": "ReceptID"}},
+      {"type": "FK", "name": "ItemID", "datatype": "INT", "not_null": true, "references": {"table": "Item", "field": "ItemID"}},
+      {"type": "", "name": "Aantal", "datatype": "INT", "not_null": true}
+    ]
+  },
+  {
+    "title": "Structuur",
+    "fields": [
+      {"type": "PK", "name": "StructuurID", "datatype": "INT", "not_null": true, "unique": true, "auto_increment": true},
+      {"type": "FK", "name": "WereldID", "datatype": "INT", "not_null": true, "references": {"table": "Wereld", "field": "WereldID"}},
+      {"type": "", "name": "Naam", "datatype": "VARCHAR(100)", "not_null": true},
+      {"type": "FK", "name": "MakerSpelerID", "datatype": "INT", "not_null": true, "references": {"table": "Speler", "field": "SpelerID"}},
+      {"type": "", "name": "LocatieX", "datatype": "FLOAT", "not_null": true},
+      {"type": "", "name": "LocatieY", "datatype": "FLOAT", "not_null": true},
+      {"type": "", "name": "LocatieZ", "datatype": "FLOAT", "not_null": true},
+      {"type": "", "name": "DatumGemaakt", "datatype": "DATETIME", "not_null": true}
+    ]
+  },
+  {
+    "title": "Achievement",
+    "fields": [
+      {"type": "PK", "name": "AchievementID", "datatype": "INT", "not_null": true, "unique": true, "auto_increment": true},
+      {"type": "", "name": "Naam", "datatype": "VARCHAR(100)", "not_null": true},
+      {"type": "", "name": "Beschrijving", "datatype": "TEXT", "not_null": false}
+    ]
+  },
+  {
+    "title": "SpelerAchievement",
+    "fields": [
+      {"type": "PK", "name": "SpelerAchievementID", "datatype": "INT", "not_null": true, "unique": true, "auto_increment": true},
+      {"type": "FK", "name": "SpelerID", "datatype": "INT", "not_null": true, "references": {"table": "Speler", "field": "SpelerID"}},
+      {"type": "FK", "name": "AchievementID", "datatype": "INT", "not_null": true, "references": {"table": "Achievement", "field": "AchievementID"}},
+      {"type": "", "name": "DatumBehaald", "datatype": "DATETIME", "not_null": true}
+    ]
+  },
+  {
+    "title": "Vrienden",
+    "fields": [
+      {"type": "PK", "name": "VriendschapID", "datatype": "INT", "not_null": true, "unique": true, "auto_increment": true},
+      {"type": "FK", "name": "SpelerID1", "datatype": "INT", "not_null": true, "references": {"table": "Speler", "field": "SpelerID"}},
+      {"type": "FK", "name": "SpelerID2", "datatype": "INT", "not_null": true, "references": {"table": "Speler", "field": "SpelerID"}},
+      {"type": "", "name": "DatumToegevoegd", "datatype": "DATETIME", "not_null": true},
+      {"type": "", "name": "Status", "datatype": "VARCHAR(20)", "not_null": true}
+    ]
+  }
+]
+
+        </textarea>
+        <button class="btn" id="generateBtn">Generate ERD</button>
+    </div>
+</div>
+
+<script>
+const openModalBtn = document.getElementById("openModalBtn");
+const modal = document.getElementById("jsonModal");
+const generateBtn = document.getElementById("generateBtn");
+const jsonInput = document.getElementById("jsonInput");
+const iframe = document.getElementById("drawioIframe");
+
+
+// Open modal
+openModalBtn.addEventListener("click", () => {
+    modal.style.display = "flex";
+});
+
+// Generate ERD
+generateBtn.addEventListener("click", async () => {
+    try {
+        const response = await fetch("http://127.0.0.1:8000/api/erd/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ data: JSON.parse(jsonInput.value) })
+        });
+
+        if (!response.ok) throw new Error("Error generating ERD");
+
+        const xml = await response.text();
+
+        // Send XML to Draw.io iframe
+        iframe.contentWindow.postMessage(
+            JSON.stringify({ action: 'load', autosave: 1, xml: xml }),
+            '*'
+        );
+
+        modal.style.display = "none"; // Close modal
+    } catch (err) {
+        alert("Fout: " + err.message);
+    }
+});
+
+// Click outside modal closes it
+window.addEventListener("click", (e) => {
+    if (e.target == modal) modal.style.display = "none";
+});
+</script>
+
+</body>
+</html>

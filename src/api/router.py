@@ -1,0 +1,10 @@
+from fastapi import APIRouter
+from api.erd.router import router as erd_router
+from api.userstories.router import router as userstories_router
+from api.scrumboard.router import router as scrumboard_router
+
+router = APIRouter()
+
+router.include_router(erd_router, prefix="/erd")
+router.include_router(userstories_router, prefix="/userstories")
+router.include_router(scrumboard_router, prefix="/scrumboard")

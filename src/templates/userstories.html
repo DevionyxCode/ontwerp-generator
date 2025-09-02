@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<title>UserStory Generator</title>
+<style>
+    body, html {
+        margin: 0;
+        padding: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f4f4f9;
+        color: #333;
+    }
+
+    header {
+        background-color: #1e1e2f;
+        color: #fff;
+        padding: 15px 30px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    header h1 {
+        margin: 0;
+        font-size: 22px;
+    }
+
+    nav {
+        display: flex;
+        gap: 15px;
+        margin-left: 20px;
+        margin-right: auto;
+    }
+
+    nav a {
+        color: #fff;
+        text-decoration: none;
+        padding: 8px 12px;
+        border-radius: 5px;
+        transition: background 0.3s;
+    }
+
+    nav a:hover {
+        background-color: #39549f;
+    }
+
+    .header-right {
+        margin-left: auto;
+    }
+
+
+    .btn {
+        padding: 10px 20px;
+        font-size: 14px;
+        background-color: #4b6cb7;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn:hover {
+        background-color: #39549f;
+    }
+
+    main {
+        padding: 20px;
+        display: flex;
+        gap: 20px;
+    }
+
+    #storyForm, #storyList {
+        flex: 1;
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    input {
+        width: calc(100% - 20px);
+        margin-bottom: 10px;
+        padding: 8px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        font-size: 14px;
+    }
+
+    .acceptance-container {
+        margin-bottom: 10px;
+    }
+
+    .acceptance-item {
+        display: flex;
+        gap: 5px;
+        margin-bottom: 5px;
+    }
+
+    .acceptance-item input {
+        flex: 1;
+    }
+
+    ul {
+        list-style: none;
+        padding: 0;
+    }
+
+    li {
+        background-color: #f0f0ff;
+        margin-bottom: 10px;
+        padding: 10px;
+        border-radius: 6px;
+    }
+
+    li h3 {
+        margin: 0 0 5px 0;
+        font-size: 16px;
+    }
+
+    li p {
+        margin: 0 0 5px 0;
+        font-size: 14px;
+    }
+
+    .acceptance-list {
+        margin: 0;
+        padding-left: 20px;
+    }
+
+    .story-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 5px;
+    }
+    /* Media query voor schermen onder 800px */
+    @media (max-width: 800px) {
+        main {
+            flex-direction: column;
+        }
+    }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>Devionyx Generator - Userstorie</h1>
+    <nav>
+        <a href="/">Home</a>
+        <a href="/erd">ERD</a>
+        <a href="/classdiagram">Class Diagram</a>
+        <a href="/userstories">Userstories</a>
+        <a href="/scrumboard">Scrumboard</a>
+    </nav>
+    <div>
+        <button class="btn" id="downloadTxtBtn">Download .txt</button>
+        <button class="btn" id="downloadDocxBtn">Download .docx</button>
+    </div>
+</header>
+
+<main>
+    <div id="storyForm">
+        <h2>Nieuwe User Story</h2>
+        <input type="text" id="storyId" placeholder="ID (bijv. US1)">
+        <input type="text" id="storyTitle" placeholder="Titel">
+        <input type="text" id="storyAsA" placeholder="Als een ...">
+        <input type="text" id="storyIWant" placeholder="Wil ik ...">
+        <input type="text" id="storySoThat" placeholder="Zodat ...">
+        <input type="text" id="storyDescription" placeholder="Beschrijving">
+
+        <div class="acceptance-container" id="acceptanceContainer">
+            <label>Acceptatiecriteria:</label>
+            <div class="acceptance-item">
+                <input type="text" placeholder="Nieuwe regel">
+                <button class="btn" type="button" onclick="addAcceptanceRule(this)">+</button>
+            </div>
+        </div>
+
+        <button class="btn" id="addStoryBtn">Toevoegen</button>
+    </div>
+
+    <div id="storyList">
+        <h2>User Stories</h2>
+        <ul id="storiesUl"></ul>
+    </div>
+</main>
+
+<script>
+const storyIdInput = document.getElementById("storyId");
+const storyTitleInput = document.getElementById("storyTitle");
+const storyAsAInput = document.getElementById("storyAsA");
+const storyIWantInput = document.getElementById("storyIWant");
+const storySoThatInput = document.getElementById("storySoThat");
+const storyDescriptionInput = document.getElementById("storyDescription");
+const addStoryBtn = document.getElementById("addStoryBtn");
+const storiesUl = document.getElementById("storiesUl");
+const downloadTxtBtn = document.getElementById("downloadTxtBtn");
+const downloadDocxBtn = document.getElementById("downloadDocxBtn");
+const acceptanceContainer = document.getElementById("acceptanceContainer");
+
+let stories = JSON.parse(localStorage.getItem("userStories") || "[]");
+
+function renderStories() {
+    storiesUl.innerHTML = "";
+    stories.forEach((s, i) => {
+        const li = document.createElement("li");
+        li.style.position = "relative"; // voor delete/copy button positioning
+        li.innerHTML = `
+            <div class="story-buttons" style="position:absolute; top:5px; right:5px; display:flex; gap:5px;">
+                <button class="btn" style="background-color:red; color:white; padding:3px 6px;" onclick="deleteStory(${i})">Verwijder</button>
+                <button class="btn" style="background-color:#4b6cb7; color:white; padding:3px 6px;" onclick="copyStory(${i})">Kopieer</button>
+            </div>
+            <h3 contenteditable="true" onblur="updateStoryField(${i}, 'title', this.innerText)">${s.title}</h3>
+            <p><strong>Als een:</strong> <span contenteditable="true" onblur="updateStoryField(${i}, 'as_a', this.innerText)">${s.user_story.as_a}</span></p>
+            <p><strong>Wil ik:</strong> <span contenteditable="true" onblur="updateStoryField(${i}, 'i_want', this.innerText)">${s.user_story.i_want}</span></p>
+            <p><strong>Zodat:</strong> <span contenteditable="true" onblur="updateStoryField(${i}, 'so_that', this.innerText)">${s.user_story.so_that}</span></p>
+            <p><strong>Beschrijving:</strong> <span contenteditable="true" onblur="updateStoryField(${i}, 'description', this.innerText)">${s.description}</span></p>
+            <p><strong>Acceptatiecriteria:</strong></p>
+            <ul class="acceptance-list">
+                ${s.acceptance_criteria.map((a,j) => `<li contenteditable="true" onblur="updateAcceptance(${i}, ${j}, this.innerText)">${a}</li>`).join("")}
+            </ul>
+        `;
+        storiesUl.appendChild(li);
+    });
+}
+
+// Update algemene velden
+function updateStoryField(index, field, value) {
+    if(field === 'title' || field === 'description'){
+        stories[index][field] = value;
+    } else if(field === 'as_a' || field === 'i_want' || field === 'so_that'){
+        stories[index].user_story[field] = value;
+    }
+    saveStories();
+}
+
+// Update acceptatiecriteria
+function updateAcceptance(storyIndex, accIndex, value){
+    stories[storyIndex].acceptance_criteria[accIndex] = value;
+    saveStories();
+}
+
+// Delete story
+function deleteStory(index){
+    if(confirm("Weet je zeker dat je deze story wilt verwijderen?")){
+        stories.splice(index, 1);
+        saveStories();
+    }
+}
+
+
+function saveStories() {
+    localStorage.setItem("userStories", JSON.stringify(stories));
+    renderStories();
+}
+
+// Dynamische acceptatiecriteria
+function addAcceptanceRule(button) {
+    const div = document.createElement("div");
+    div.className = "acceptance-item";
+    div.innerHTML = `<input type="text" placeholder="Nieuwe regel">
+                     <button class="btn" type="button" onclick="addAcceptanceRule(this)">+</button>
+                     <button class="btn" type="button" onclick="removeAcceptanceRule(this)">-</button>`;
+    acceptanceContainer.appendChild(div);
+}
+
+function removeAcceptanceRule(button) {
+    button.parentElement.remove();
+}
+
+// Voeg nieuwe story toe
+addStoryBtn.addEventListener("click", () => {
+    const acceptanceInputs = Array.from(acceptanceContainer.querySelectorAll("input")).map(i => i.value).filter(v => v.trim());
+    const newStory = {
+        id: storyIdInput.value,
+        title: storyTitleInput.value,
+        user_story: {
+            as_a: storyAsAInput.value,
+            i_want: storyIWantInput.value,
+            so_that: storySoThatInput.value
+        },
+        description: storyDescriptionInput.value,
+        acceptance_criteria: acceptanceInputs
+    };
+
+    stories.push(newStory);
+    saveStories();
+
+    // Form reset
+    storyIdInput.value = "";
+    storyTitleInput.value = "";
+    storyAsAInput.value = "";
+    storyIWantInput.value = "";
+    storySoThatInput.value = "";
+    storyDescriptionInput.value = "";
+    acceptanceContainer.innerHTML = `<label>Acceptatiecriteria:</label>
+        <div class="acceptance-item">
+            <input type="text" placeholder="Nieuwe regel">
+            <button class="btn" type="button" onclick="addAcceptanceRule(this)">+</button>
+        </div>`;
+});
+
+// Copy single story
+function copyStory(index) {
+    const story = stories[index];
+    fetch("http://127.0.0.1:8000/api/userstories/generate/string", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ data: [story] })
+    })
+    .then(res => res.text())
+    .then(text => navigator.clipboard.writeText(text))
+    .then(() => alert("User story gekopieerd!"))
+    .catch(err => alert("Fout: " + err.message));
+}
+
+// Download .txt
+downloadTxtBtn.addEventListener("click", () => {
+    fetch("http://127.0.0.1:8000/api/userstories/generate/txt", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ data: stories })
+    })
+    .then(res => res.text())
+    .then(text => {
+        const blob = new Blob([text], {type: "text/plain"});
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "userstories.txt";
+        link.click();
+    });
+});
+
+// Download .docx
+downloadDocxBtn.addEventListener("click", () => {
+    fetch("http://127.0.0.1:8000/api/userstories/generate/docx", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ data: stories })
+    })
+    .then(res => res.blob())
+    .then(blob => {
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "userstories.docx";
+        link.click();
+    });
+});
+
+// Initial render
+renderStories();
+</script>
+
+</body>
+</html>

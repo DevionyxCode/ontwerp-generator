@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<title>Scrumboard Generator</title>
+<style>
+    body, html {
+        margin: 0;
+        padding: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f4f4f9;
+        color: #333;
+    }
+
+    header {
+        background-color: #1e1e2f;
+        color: #fff;
+        padding: 15px 30px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+
+    header h1 {
+        margin: 0;
+        font-size: 22px;
+    }
+
+    nav {
+        display: flex;
+        gap: 15px;
+        margin-left: 20px;
+        margin-right: auto;
+    }
+
+    nav a {
+        color: #fff;
+        text-decoration: none;
+        padding: 8px 12px;
+        border-radius: 5px;
+        transition: background 0.3s;
+    }
+
+    nav a:hover {
+        background-color: #39549f;
+    }
+
+    main {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .columns-container {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+    }
+
+    .column {
+        background-color: #fff;
+        padding: 15px;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        flex: 1;
+        min-width: 250px;
+        position: relative;
+    }
+
+    .column h2 {
+        margin-top: 0;
+        display: inline-block;
+    }
+
+    .block {
+        background-color: #f0f0ff;
+        padding: 10px;
+        border-radius: 6px;
+        margin-bottom: 10px;
+    }
+
+    select {
+        width: 100%;
+        margin-bottom: 5px;
+        padding: 5px;
+        font-size: 14px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
+
+    input, textarea {
+        width: calc(100% - 10px);
+        margin-bottom: 5px;
+        padding: 5px;
+        font-size: 14px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
+
+    .btn {
+        padding: 6px 12px;
+        background-color: #4b6cb7;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-top: 5px;
+    }
+
+    .btn:hover {
+        background-color: #39549f;
+    }
+
+    .block-buttons {
+        display: flex;
+        gap: 5px;
+        margin-top: 5px;
+    }
+
+    .delete-column-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: red;
+        color: white;
+        padding: 3px 6px;
+        font-size: 12px;
+    }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>Scrumboard Generator - Scrumboard</h1>
+    <nav>
+        <a href="/">Home</a>
+        <a href="/erd">ERD</a>
+        <a href="/classdiagram">Class Diagram</a>
+        <a href="/userstories">Userstories</a>
+        <a href="/scrumboard">Scrumboard</a>
+    </nav>
+    <button class="btn" id="downloadExcelBtn">Download Excel</button>
+</header>
+
+<main>
+    <button class="btn" onclick="addColumn()">+ Nieuwe Kolom</button>
+    <div class="columns-container" id="columnsContainer"></div>
+</main>
+
+<script>
+const columnsContainer = document.getElementById("columnsContainer");
+const downloadExcelBtn = document.getElementById("downloadExcelBtn");
+
+// Load scrumboard from localStorage or default
+let scrumboard = JSON.parse(localStorage.getItem("scrumboard") || `{
+    "Backlog": [],
+    "Sprints": [],
+    "In Progress": [],
+    "Review / Testing": [],
+    "Done": []
+}`);
+
+// Save scrumboard to localStorage
+function saveScrumboard() {
+    localStorage.setItem("scrumboard", JSON.stringify(scrumboard));
+}
+
+// Excel download
+downloadExcelBtn.addEventListener("click", () => {
+    fetch("http://127.0.0.1:8000/api/scrumboard/generate/excel", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ data: scrumboard })
+    })
+    .then(res => {
+        if (!res.ok) throw new Error("Fout bij ophalen van Excel");
+        return res.blob();
+    })
+    .then(blob => {
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = "scrumboard.xlsx";
+        link.click();
+    })
+    .catch(err => alert("Fout: " + err.message));
+});
+
+// Render alle kolommen
+function renderColumns() {
+    columnsContainer.innerHTML = "";
+    for (const colName in scrumboard) {
+        const colDiv = document.createElement("div");
+        colDiv.className = "column";
+
+        let html = `
+            <h2 contenteditable="true" onblur="renameColumn('${colName}', this.innerText)">${colName}</h2>
+            ${!["Backlog","Sprints","In Progress","Review / Testing","Done"].includes(colName) ?
+                `<button class="delete-column-btn" onclick="deleteColumn('${colName}')">X</button>` : ''}
+            <div id="blocks-${colName}"></div>
+            <button class="btn" onclick="addBlock('${colName}')">+ Blok Toevoegen</button>
+        `;
+        colDiv.innerHTML = html;
+        columnsContainer.appendChild(colDiv);
+
+        renderBlocks(colName);
+    }
+}
+
+// Render blokken in kolom
+function renderBlocks(colName) {
+    const container = document.getElementById(`blocks-${colName}`);
+    container.innerHTML = "";
+    scrumboard[colName].forEach((block, index) => {
+        const blockDiv = document.createElement("div");
+        blockDiv.className = "block";
+        blockDiv.innerHTML = `
+            <input type="text" placeholder="ID" value="${block.id}" oninput="updateBlock('${colName}', ${index}, 'id', this.value)">
+            <input type="text" placeholder="Titel" value="${block.title}" oninput="updateBlock('${colName}', ${index}, 'title', this.value)">
+            <textarea placeholder="Content" oninput="updateBlock('${colName}', ${index}, 'content', this.value)">${block.content}</textarea>
+            <select onchange="updateBlock('${colName}', ${index}, 'priority', this.value)">
+                <option value="Must Have" ${block.priority==='Must Have'?'selected':''}>Must Have</option>
+                <option value="Should Have" ${block.priority==='Should Have'?'selected':''}>Should Have</option>
+                <option value="Could Have" ${block.priority==='Could Have'?'selected':''}>Could Have</option>
+            </select>
+            <input type="number" placeholder="Tijd (uren)" value="${block.time_estimate}" oninput="updateBlock('${colName}', ${index}, 'time_estimate', this.value)">
+            <input type="text" placeholder="Assignee" value="${block.assignee}" oninput="updateBlock('${colName}', ${index}, 'assignee', this.value)">
+            <input type="text" placeholder="Tags (komma gescheiden)" value="${block.tags.join(', ')}" oninput="updateBlock('${colName}', ${index}, 'tags', this.value)">
+            <div class="block-buttons">
+                <button class="btn" style="background-color:red" onclick="deleteBlock('${colName}', ${index})">Verwijder</button>
+            </div>
+        `;
+        container.appendChild(blockDiv);
+    });
+}
+
+// Voeg blok toe
+function addBlock(colName) {
+    scrumboard[colName].push({
+        id: "",
+        title: "",
+        content: "",
+        priority: "Must Have",
+        time_estimate: 1,
+        assignee: "",
+        tags: [],
+        status: colName,
+        created_at: new Date().toISOString().split('T')[0],
+        updated_at: new Date().toISOString().split('T')[0]
+    });
+    saveScrumboard();
+    renderBlocks(colName);
+}
+
+// Update blok
+function updateBlock(colName, index, field, value) {
+    if(field === "tags") value = value.split(',').map(t=>t.trim());
+    scrumboard[colName][index][field] = value;
+    scrumboard[colName][index]["updated_at"] = new Date().toISOString().split('T')[0];
+    saveScrumboard();
+}
+
+// Verwijder blok
+function deleteBlock(colName, index) {
+    scrumboard[colName].splice(index,1);
+    saveScrumboard();
+    renderBlocks(colName);
+}
+
+// Voeg nieuwe kolom toe
+function addColumn() {
+    const colName = prompt("Naam van de nieuwe kolom:");
+    if(colName && !scrumboard[colName]){
+        scrumboard[colName] = [];
+        saveScrumboard();
+        renderColumns();
+    }
+}
+
+// Hernoem kolom
+function renameColumn(oldName, newName) {
+    if(!newName || scrumboard[newName]) return;
+    scrumboard[newName] = scrumboard[oldName];
+    delete scrumboard[oldName];
+    scrumboard[newName].forEach(block => block.status = newName);
+    saveScrumboard();
+    renderColumns();
+}
+
+// Verwijder kolom
+function deleteColumn(colName) {
+    if(confirm(`Weet je zeker dat je kolom "${colName}" wilt verwijderen?`)){
+        delete scrumboard[colName];
+        saveScrumboard();
+        renderColumns();
+    }
+}
+
+// Initial render
+renderColumns();
+</script>
+</body>
+</html>
