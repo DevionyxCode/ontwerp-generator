@@ -147,6 +147,13 @@
 <main>
     <button class="btn" onclick="addColumn()">+ Nieuwe Kolom</button>
     <div class="columns-container" id="columnsContainer"></div>
+
+    <h2>Scrumboard JSON</h2>
+    <textarea id="jsonEditor" rows="15" style="width:100%;font-family:monospace;"></textarea>
+    <div style="margin-top:10px;">
+        <button class="btn" onclick="loadJsonToEditor()">Toon JSON</button>
+        <button class="btn" onclick="saveJsonFromEditor()">Opslaan JSON</button>
+    </div>
 </main>
 
 <script>
@@ -223,6 +230,7 @@ function renderBlocks(colName) {
                 <option value="Must Have" ${block.priority==='Must Have'?'selected':''}>Must Have</option>
                 <option value="Should Have" ${block.priority==='Should Have'?'selected':''}>Should Have</option>
                 <option value="Could Have" ${block.priority==='Could Have'?'selected':''}>Could Have</option>
+                <option value="Won’t have" ${block.priority==='Won’t have'?'selected':''}>Won’t have</option>
             </select>
             <input type="number" placeholder="Tijd (uren)" value="${block.time_estimate}" oninput="updateBlock('${colName}', ${index}, 'time_estimate', this.value)">
             <input type="text" placeholder="Assignee" value="${block.assignee}" oninput="updateBlock('${colName}', ${index}, 'assignee', this.value)">
@@ -294,6 +302,23 @@ function deleteColumn(colName) {
         delete scrumboard[colName];
         saveScrumboard();
         renderColumns();
+    }
+}
+
+function loadJsonToEditor() {
+    document.getElementById("jsonEditor").value = JSON.stringify(scrumboard, null, 4);
+}
+
+// Sla JSON op vanuit editor
+function saveJsonFromEditor() {
+    try {
+        const newJson = JSON.parse(document.getElementById("jsonEditor").value);
+        scrumboard = newJson;
+        saveScrumboard();
+        renderColumns();
+        alert("JSON succesvol bijgewerkt.");
+    } catch (e) {
+        alert("Fout in JSON: " + e.message);
     }
 }
 
