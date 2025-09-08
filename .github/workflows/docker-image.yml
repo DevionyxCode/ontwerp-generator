@@ -28,4 +28,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/devionyxcode/main_cms_backend:latest
+          tags: ghcr.io/devionyxcode/ontwerp-generator:latest
