@@ -305,7 +305,7 @@ addStoryBtn.addEventListener("click", () => {
 // Copy single story
 function copyStory(index) {
     const story = stories[index];
-    fetch("http://127.0.0.1:8000/api/userstories/generate/string", {
+    fetch("http://127.0.0.1:8090/api/userstories/generate/string", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({ data: [story] })
@@ -318,7 +318,7 @@ function copyStory(index) {
 
 // Download .txt
 downloadTxtBtn.addEventListener("click", () => {
-    fetch("http://127.0.0.1:8000/api/userstories/generate/txt", {
+    fetch("http://127.0.0.1:8090/api/userstories/generate/txt", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({ data: stories })
@@ -335,7 +335,7 @@ downloadTxtBtn.addEventListener("click", () => {
 
 // Download .docx
 downloadDocxBtn.addEventListener("click", () => {
-    fetch("http://127.0.0.1:8000/api/userstories/generate/docx", {
+    fetch("http://127.0.0.1:8090/api/userstories/generate/docx", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({ data: stories })

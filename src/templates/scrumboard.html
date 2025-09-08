@@ -176,7 +176,7 @@ function saveScrumboard() {
 
 // Excel download
 downloadExcelBtn.addEventListener("click", () => {
-    fetch("http://127.0.0.1:8000/api/scrumboard/generate/excel", {
+    fetch("http://127.0.0.1:8090/api/scrumboard/generate/excel", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({ data: scrumboard })

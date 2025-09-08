@@ -211,7 +211,7 @@ openModalBtn.addEventListener("click", () => {
 // Generate Class Diagram
 generateBtn.addEventListener("click", async () => {
     try {
-        const response = await fetch("http://127.0.0.1:8000/api/classdiagram/generate", {
+        const response = await fetch("http://127.0.0.1:8090/api/classdiagram/generate", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ data: JSON.parse(jsonInput.value) })
