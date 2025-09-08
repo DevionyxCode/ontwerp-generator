@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<title>Narratives Editor</title>
+<style>
+body, html { margin:0; padding:0; font-family: 'Segoe UI', sans-serif; background:#f4f4f9; color:#333; }
+header { background:#1e1e2f; color:#fff; padding:15px 30px; display:flex; justify-content:space-between; align-items:center; }
+header h1 { margin:0; font-size:22px; }
+main { padding:20px; display:flex; flex-direction:column; gap:20px; }
+.block { background:#fff; padding:10px; border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,0.1); }
+.block h2 { margin-top:0; display:inline-block; }
+.flow-row, .text-item { margin-bottom:5px; padding:5px; border-radius:5px; border:1px solid #ccc; background:#f0f0ff; }
+.btn { padding:5px 10px; border:none; border-radius:5px; background:#4b6cb7; color:#fff; cursor:pointer; }
+.btn:hover { background:#39549f; }
+textarea { width:100%; font-family:monospace; padding:5px; border-radius:5px; border:1px solid #ccc; }
+    nav {
+        display: flex;
+        gap: 15px;
+        margin-left: 20px;
+        margin-right: auto;
+    }
+
+    nav a {
+        color: #fff;
+        text-decoration: none;
+        padding: 8px 12px;
+        border-radius: 5px;
+        transition: background 0.3s;
+    }
+
+    nav a:hover {
+        background-color: #39549f;
+    }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>Devionyx Generator - Narratives</h1>
+    <nav>
+        <a href="/">Home</a>
+        <a href="/erd">ERD</a>
+        <a href="/classdiagram">Class Diagram</a>
+        <a href="/userstories">Userstories</a>
+        <a href="/scrumboard">Scrumboard</a>
+        <a href="/narratives">Narratives</a>
+    </nav>
+    <button class="btn" onclick="downloadJSON()">Download DOCX</button>
+</header>
+
+<main>
+    <div id="blocksContainer"></div>
+</main>
+
+<script>
+let sample_json = {
+    "metadata":[
+        [{"text":"Use Case:","bg_color":"CCCCCC","width":0.25},{"text":"Gebruiker blokkeren","width":0.4},{"text":"Version No:","bg_color":"CCCCCC","width":0.15},{"text":"0.1","width":0.25}],
+        [{"text":"End goal:","bg_color":"CCCCCC","width":0.25},{"text":"De toegang van een gebruiker tot het systeem tijdelijk beperken.","width":0.75}],
+        [{"text":"Description:","bg_color":"CCCCCC","width":0.25},{"text":"Een beheerder blokkeert een actieve gebruiker, waardoor deze niet meer kan inloggen of acties uitvoeren totdat deze weer wordt gedeblokkeerd.","width":0.75}],
+        [{"text":"Actors:","bg_color":"CCCCCC","width":0.25},{"text":"Beheerder","width":0.75}]
+    ],
+    "preconditions":[
+        [{"text":"Preconditions","bg_color":"CCCCCC"}],
+        [{"text":" 1. De beheerder is succesvol ingelogd\n2. De beheerder heeft de juiste autorisatie"}]
+    ],
+    "basic_flow":[
+        [{"text":"Basic Flow","bg_color":"CCCCCC"}],
+        [{"text":"Step","bg_color":"CCCCCC","width":0.15},{"text":"User Actions","bg_color":"CCCCCC","width":0.3},{"text":"System Actions","bg_color":"CCCCCC","width":0.55}],
+        [{"text":"1","width":0.15},{"text":"Beheerder navigeert","width":0.3},{"text":"Systeem toont gebruikers","width":0.55}]
+    ],
+    "alternate_flows":[
+        [{"text":"Alternate Flow","bg_color":"CCCCCC"}],
+        [{"text":"Step","bg_color":"CCCCCC","width":0.15},{"text":"User Actions","bg_color":"CCCCCC","width":0.3},{"text":"System Actions","bg_color":"CCCCCC","width":0.55}],
+        [{"text":"1","width":0.15},{"text":"Meerdere gebruikers selecteren","width":0.3},{"text":"Systeem highlight","width":0.55}]
+    ],
+    "exception_flows":[
+        [{"text":"Exception Flow","bg_color":"CCCCCC"}],
+        [{"text":"1","width":0.15},{"text":"Beheerder probeert zichzelf te blokkeren","width":0.3},{"text":"Systeem toont foutmelding","width":0.55}]
+    ],
+    "postconditions":[
+        [{"text":"Postconditions","bg_color":"CCCCCC"}],
+        [{"text":"1. De gebruiker(s) is/zijn geblokkeerd\n2. Actieve sessies beëindigd"}]
+    ]
+};
+
+const blocksContainer = document.getElementById("blocksContainer");
+const blockKeys = ["metadata","preconditions","basic_flow","alternate_flows","exception_flows","postconditions"];
+
+function renderBlocks() {
+    blocksContainer.innerHTML = "";
+    blockKeys.forEach(key=>{
+        const blockDiv = document.createElement("div");
+        blockDiv.className = "block";
+        blockDiv.innerHTML = `<h2>${key}</h2><div id="content-${key}"></div><button class="btn" onclick="addItem('${key}')">+ Voeg toe</button>`;
+        blocksContainer.appendChild(blockDiv);
+        renderItems(key);
+    });
+}
+
+// Voor preconditions/postconditions: gescheiden lijst in memory
+let preconditions_list = sample_json.preconditions[1][0].text.split("\n");
+let postconditions_list = sample_json.postconditions[1][0].text.split("\n");
+
+function renderItems(key){
+    const container = document.getElementById(`content-${key}`);
+    container.innerHTML = "";
+
+    // Voor pre/post: speciale lijstweergave
+    if (key === "preconditions" || key === "postconditions") {
+        const list = key === "preconditions" ? preconditions_list : postconditions_list;
+        list.forEach((item, index) => {
+            const ta = document.createElement("textarea");
+            ta.className = "text-item";
+            ta.value = item;
+            ta.placeholder = "Voer regel in";
+            ta.oninput = e => { list[index] = e.target.value; };
+            container.appendChild(ta);
+        });
+        return;
+    }
+
+    // Andere flows / metadata
+    sample_json[key].forEach((row, index) => {
+        if (Array.isArray(row)) {
+            const rowDiv = document.createElement("div");
+            rowDiv.className = "flow-row";
+            row.forEach((cell, cellIndex) => {
+                const input = document.createElement("input");
+                input.value = cell.text || "";
+                input.style.backgroundColor = cell.bg_color ? "#" + cell.bg_color : "#f0f0ff";
+
+                // Maak bepaalde cellen readonly
+                if (
+                    // metadata readonly
+                    key === "metadata" && (cell.text === "Use Case:" || cell.text === "End goal:" || cell.text === "Description:" || cell.text === "Actors:" || cell.text === "Version No:") ||
+                    // basic/alternate/exception flows: header rijen readonly
+                    ((key === "basic_flow" || key === "alternate_flows" || key === "exception_flows") && index === 0) ||
+                    // flow column headers readonly (Step / User Actions / System Actions)
+                    ((key === "basic_flow" || key === "alternate_flows" || key === "exception_flows") && index === 1)
+                ) {
+                    input.readOnly = true;
+                } else {
+                    input.oninput = e => { cell.text = e.target.value; };
+                }
+
+                rowDiv.appendChild(input);
+            });
+            container.appendChild(rowDiv);
+        } else if (typeof row === "object" && row.text) {
+            const ta = document.createElement("textarea");
+            ta.className = "text-item";
+            ta.value = row.text || "";
+            ta.oninput = e => { row.text = e.target.value; };
+            container.appendChild(ta);
+        } else {
+            const ta = document.createElement("textarea");
+            ta.className = "text-item";
+            ta.value = row;
+            ta.oninput = e => { sample_json[key][index] = e.target.value; };
+            container.appendChild(ta);
+        }
+    });
+}
+
+
+function addItem(key){
+    if (key === "preconditions" || key === "postconditions") {
+        const list = key === "preconditions" ? preconditions_list : postconditions_list;
+        list.push(""); // nieuwe lege regel
+        renderItems(key);
+        return;
+    }
+
+    // Voor flows (basic/alternate/exception)
+    sample_json[key].push([
+        {"text": "", "width": 0.15},
+        {"text": "", "width": 0.30},
+        {"text": "", "width": 0.55}
+    ]);
+    renderItems(key);
+}
+
+function downloadJSON() {
+    // Voeg pre/post samen tot 1 string met \n voordat JSON wordt verzonden
+    sample_json.preconditions[1][0].text = preconditions_list.join("\n");
+    sample_json.postconditions[1][0].text = postconditions_list.join("\n");
+
+    // POST naar je FastAPI endpoint
+    fetch("http://127.0.0.1:8090/api/narratives/generate", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ data: sample_json })
+    })
+    .then(response => {
+        if (!response.ok) throw new Error("Fout bij genereren van DOCX");
+        return response.blob();
+    })
+    .then(blob => {
+        // Maak link en trigger download
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "narrative.docx";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    })
+    .catch(err => alert(err));
+}
+
+renderBlocks();
+</script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "actors": [
+    {"name": "Beheerder", "type": "primary"},
+    {"name": "Gebruiker", "type": "primary"}
+  ],
+  "use_cases": [
+    {"name": "Gebruiker blokkeren", "type": "system"},
+    {"name": "Inloggen", "type": "system"}
+  ],
+  "relations": [
+    {"from": "Beheerder", "to": "Gebruiker blokkeren", "type": "initiates"},
+    {"from": "Gebruiker", "to": "Inloggen", "type": "initiates"},
+    {"from": "Beheerder", "to": "Gebruiker", "type": "manages"}
+  ]
+}
