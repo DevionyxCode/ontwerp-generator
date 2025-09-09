@@ -241,7 +241,7 @@ function addUsecase() {
 }
 
 // ---- Relations ----
-function addRelation(fromType, fromId, toType, toId) {
+function addRelation(fromType, fromId, toType, toId, relationType = "include") {
   if (!fromId || !toId) return;
 
   if (fromType === "actor" && toType === "usecase") {
@@ -254,25 +254,31 @@ function addRelation(fromType, fromId, toType, toId) {
     }
   } else if (fromType === "usecase" && toType === "usecase") {
     const uc = data.use_cases.find(u => u.id === fromId);
-    if (uc) {
-      if (!uc.includes) uc.includes = [];
-      if (!uc.includes.includes(toId)) uc.includes.push(toId);
-    }
+    if (!uc) return;
+
+    let prop = relationType === "extend" ? "extend" : "includes";
+    if (!uc[prop]) uc[prop] = [];
+    if (!uc[prop].includes(toId)) uc[prop].push(toId);
+
   } else if (fromType === "actor" && toType === "actor") {
-    if (!data.relations.some(r => r.actor_id === fromId && r.use_case_id === toId)) {
-      data.relations.push({ actor_id: fromId, use_case_id: toId });
+    const fromActor = data.actors.find(a => a.id === fromId);
+    if (!fromActor.linked_actors) fromActor.linked_actors = [];
+    if (!fromActor.linked_actors.includes(toId)) {
+      fromActor.linked_actors.push(toId);
     }
   }
 
   render();
 }
 
-function removeRelation(fromType, fromId, toType, toId) {
+function removeRelation(fromType, fromId, toType, toId, relationType) {
   if (!fromId || !toId) return;
 
-  if (fromType === "usecase" && toType === "usecase") {
+  if (fromType === "usecase" && toType === "usecase" && relationType) {
     const uc = data.use_cases.find(u => u.id === fromId);
-    if (uc && uc.includes) uc.includes = uc.includes.filter(i => i !== toId);
+    if (uc && uc[relationType]) {
+      uc[relationType] = uc[relationType].filter(i => i !== toId);
+    }
   } else {
     data.relations = data.relations.filter(r => !(
       (r.actor_id === fromId && r.use_case_id === toId) ||
@@ -280,6 +286,13 @@ function removeRelation(fromType, fromId, toType, toId) {
     ));
   }
 
+  render();
+}
+function removeLinkedActor(fromId, toId) {
+  const actor = data.actors.find(a => a.id === fromId);
+  if (actor && actor.linked_actors) {
+    actor.linked_actors = actor.linked_actors.filter(id => id !== toId);
+  }
   render();
 }
 
@@ -294,7 +307,7 @@ function render() {
     div.innerHTML = `
       <strong>${a.name} (${a.id})</strong>
       <div>
-        <select onchange="addRelation('actor','${a.id}',this.value.split(':')[0],this.value.split(':')[1]);this.value=''">
+        <select onchange="const [type,id]=this.value.split(':'); addRelation('actor','${a.id}',type,id); this.value=''">
           <option value="">+ Koppel...</option>
           ${[...data.actors.filter(x => x.id !== a.id).map(x => `<option value="actor:${x.id}">Actor: ${x.name}</option>`),
             ...data.use_cases.map(u => `<option value="usecase:${u.id}">Usecase: ${u.name}</option>`)].join('')}
@@ -308,7 +321,13 @@ function render() {
           if (ac) return `<div class="chip">${ac.name}<button onclick="removeRelation('actor','${a.id}','actor','${ac.id}')">×</button></div>`;
           return '';
         }).join('')}
+        ${(a.linked_actors || []).map(id => {
+          const ac = data.actors.find(x => x.id === id);
+          if (ac) return `<div class="chip">Actor: ${ac.name}<button onclick="removeLinkedActor('${a.id}','${id}')">×</button></div>`;
+          return '';
+        }).join('')}
       </div>
+      <button class="btn" onclick="removeActor('${a.id}')">Delete Actor</button>
     `;
     actorsList.appendChild(div);
   });
@@ -322,29 +341,74 @@ function render() {
     div.innerHTML = `
       <strong>${u.name} (${u.id})</strong>
       <div>
-        <select onchange="addRelation('usecase','${u.id}',this.value.split(':')[0],this.value.split(':')[1]);this.value=''">
+          <select ${isTarget(u.id) ? 'disabled' : ''} onchange="
+            const [type,id,relType]=this.value.split(':');
+            addRelation('usecase','${u.id}',type,id,relType);
+            this.value='';
+          ">
           <option value="">+ Koppel...</option>
-          ${[...data.actors.map(a => `<option value="actor:${a.id}">Actor: ${a.name}</option>`),
-            ...data.use_cases.filter(x => x.id !== u.id).map(x => `<option value="usecase:${x.id}">Usecase: ${x.name}</option>`)].join('')}
+          ${data.actors.map(a => `<option value="actor:${a.id}">Actor: ${a.name}</option>`).join('')}
+          ${data.use_cases.filter(x => x.id !== u.id).map(x => `
+            <option value="usecase:${x.id}:include">Include: ${x.name}</option>
+            <option value="usecase:${x.id}:extend">Extend: ${x.name}</option>
+          `).join('')}
         </select>
       </div>
       <div class="chips">
+        ${(u.includes || []).map(inc => {
+          const target = data.use_cases.find(x => x.id === inc);
+          return `<div class="chip">Include: ${target.name}<button onclick="removeRelation('usecase','${u.id}','usecase','${target.id}','includes')">×</button></div>`;
+        }).join('')}
+        ${(u.extend || []).map(ext => {
+          const target = data.use_cases.find(x => x.id === ext);
+          return `<div class="chip">Extend: ${target.name}<button onclick="removeRelation('usecase','${u.id}','usecase','${target.id}','extend')">×</button></div>`;
+        }).join('')}
         ${data.relations.filter(r => r.use_case_id === u.id).map(r => {
           const ac = data.actors.find(a => a.id === r.actor_id);
           if (ac) return `<div class="chip">${ac.name}<button onclick="removeRelation('usecase','${u.id}','actor','${ac.id}')">×</button></div>`;
           return '';
         }).join('')}
-        ${(u.includes || []).map(inc => {
-          const target = data.use_cases.find(x => x.id === inc);
-          return `<div class="chip">incl. ${target.name}<button onclick="removeRelation('usecase','${u.id}','usecase','${target.id}')">×</button></div>`;
-        }).join('')}
       </div>
+      <button class="btn" onclick="removeUsecase('${u.id}')">Delete Use Case</button>
     `;
     usecasesList.appendChild(div);
   });
 
   document.getElementById("jsonOutput").value = JSON.stringify(data, null, 2);
   saveToLocalStorage();
+}
+
+// ---- Remove Actor / Usecase ----
+function removeActor(actorId) {
+  // Verwijder actor uit data
+  data.actors = data.actors.filter(a => a.id !== actorId);
+  // Verwijder alle relaties met deze actor
+  data.relations = data.relations.filter(r => r.actor_id !== actorId);
+  data.use_cases.forEach(u => {
+    if (u.includes) u.includes = u.includes.filter(id => id !== actorId);
+    if (u.extend) u.extend = u.extend.filter(id => id !== actorId);
+  });
+  render();
+}
+
+function removeUsecase(usecaseId) {
+  // Verwijder usecase uit data
+  data.use_cases = data.use_cases.filter(u => u.id !== usecaseId);
+  // Verwijder alle relaties met deze usecase
+  data.relations = data.relations.filter(r => r.use_case_id !== usecaseId);
+  data.use_cases.forEach(u => {
+    if (u.includes) u.includes = u.includes.filter(id => id !== usecaseId);
+    if (u.extend) u.extend = u.extend.filter(id => id !== usecaseId);
+  });
+  render();
+}
+
+function isTarget(usecaseId) {
+  // Check of deze usecase in een include of extend van een andere usecase voorkomt
+  return data.use_cases.some(u =>
+    (u.includes && u.includes.includes(usecaseId)) ||
+    (u.extend && u.extend.includes(usecaseId))
+  );
 }
 
 // ---- JSON ----

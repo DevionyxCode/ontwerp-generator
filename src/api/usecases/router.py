@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response, JSONResponse
 from pydantic import BaseModel
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 # Importeer de DrawioUseCaseDiagramGenerator vanuit de juiste module
 # Vervang 'jouw_module.drawio_generator' door het daadwerkelijke pad naar het bestand
@@ -10,11 +10,26 @@ from core.usecases.userstorietousecase import userstories_to_usecase_json
 
 router = APIRouter(tags=["USECASEDIAGRAM"])
 
+class Actor(BaseModel):
+    id: str
+    name: str
+    linked_actors: Optional[List[str]] = []
+
+class UseCase(BaseModel):
+    id: str
+    name: str
+    includes: Optional[List[str]] = []
+    extend: Optional[List[str]] = []
+
+class Relation(BaseModel):
+    actor_id: str
+    use_case_id: str
+
 class UseCaseInput(BaseModel):
     system: str
-    actors: List[Dict[str, str]]
-    use_cases: List[Dict[str, Any]]
-    relations: List[Dict[str, str]]
+    actors: List[Actor]
+    use_cases: List[UseCase]
+    relations: List[Relation]
 
 @router.post("/generate", response_class=Response)
 def generate_usecase_diagram(input_data: UseCaseInput):
