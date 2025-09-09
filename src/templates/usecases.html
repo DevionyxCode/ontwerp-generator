@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Devionyx Generator</title>
+<style>
+  body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f4f9;
+    color: #333;
+  }
+
+  header {
+    background-color: #1e1e2f;
+    color: #fff;
+    padding: 15px 30px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  header h1 {
+    margin: 0;
+    font-size: 22px;
+  }
+
+  nav {
+    display: flex;
+    gap: 15px;
+    margin-left: 20px;
+  }
+
+  nav a {
+    color: #fff;
+    text-decoration: none;
+  }
+
+  .header-right {
+    margin-left: auto;
+  }
+
+  .btn {
+    padding: 6px 12px;
+    background: #4b6cb7;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  .btn:hover {
+    background: #39549f;
+  }
+
+  main {
+    display: flex;
+    height: calc(100vh - 65px);
+  }
+
+  .column {
+    flex: 1;
+    padding: 20px;
+    border-right: 1px solid #ccc;
+  }
+
+  .column:last-child {
+    border-right: none;
+  }
+
+  h2 {
+    margin-top: 0;
+  }
+
+  .list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .item {
+    padding: 8px 12px;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+  }
+
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 5px;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #eaf0ff;
+    border: 1px solid #4b6cb7;
+    border-radius: 20px;
+    padding: 4px 10px;
+    font-size: 13px;
+  }
+
+  .chip button {
+    background: none;
+    border: none;
+    color: #c00;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  textarea {
+    width: 100%;
+    height: 200px;
+    margin-top: 10px;
+    font-family: monospace;
+  }
+
+  #drawioOverlay {
+    display: none;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    background: #fff;
+  }
+  #drawioOverlay iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+  }
+
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Devionyx Generator</h1>
+  <nav>
+    <a href="/">Home</a>
+    <a href="/erd">ERD</a>
+    <a href="/classdiagram">Class Diagram</a>
+    <a href="/userstories">Userstories</a>
+    <a href="/scrumboard">Scrumboard</a>
+    <a href="/narratives">Narratives</a>
+  </nav>
+  <div class="header-right">
+    <button class="btn" onclick="importUserStories()">Import User Stories</button>
+    <button class="btn" id="editDiagramBtn">Edit Diagram</button>
+  </div>
+</header>
+
+<div id="drawioOverlay" style="
+    display:none;
+    position:absolute;
+    top:60px; /* onder header */
+    left:0;
+    width:100%;
+    height:calc(100vh - 60px);
+    background:#fff;
+    z-index:1000;
+">
+    <iframe id="drawioIframe"
+        src="https://embed.diagrams.net/?embed=1&ui=atlas&spin=1&proto=json&noSaveBtn=1&noExitBtn=1&saveAndExit=0&ui=dark"
+        style="width:100%; height:100%; border:none;">
+    </iframe>
+</div>
+
+<main id="mainContent">
+  <div class="column" id="actorsColumn">
+    <h2>Actors</h2>
+    <div class="list" id="actorsList"></div>
+    <input type="text" id="newActorName" placeholder="Nieuwe actor..." />
+    <button class="btn" onclick="addActor()">+ Add Actor</button>
+  </div>
+
+  <div class="column" id="usecasesColumn">
+    <h2>Use Cases</h2>
+    <div class="list" id="usecasesList"></div>
+    <input type="text" id="newUsecaseName" placeholder="Nieuwe use case..." />
+    <button class="btn" onclick="addUsecase()">+ Add Use Case</button>
+  </div>
+</main>
+
+<div style="padding:20px;">
+  <h2>JSON Output</h2>
+  <textarea id="jsonOutput"></textarea>
+</div>
+
+<script>
+let actorCounter = 1;
+let usecaseCounter = 1;
+
+const data = {
+  system: "Schoolportaal",
+  actors: [],
+  use_cases: [],
+  relations: []
+};
+
+// ---- LocalStorage helpers ----
+function saveToLocalStorage() {
+  localStorage.setItem("usecaseData", JSON.stringify(data));
+}
+
+function loadFromLocalStorage() {
+  const saved = JSON.parse(localStorage.getItem("usecaseData") || "null");
+  if (saved) {
+    data.actors = saved.actors || [];
+    data.use_cases = saved.use_cases || [];
+    data.relations = saved.relations || [];
+    actorCounter = data.actors.length ? Math.max(...data.actors.map(a => parseInt(a.id.replace("A","")))) + 1 : 1;
+    usecaseCounter = data.use_cases.length ? Math.max(...data.use_cases.map(u => parseInt(u.id.replace("UC","")))) + 1 : 1;
+  }
+}
+
+// ---- Add Actor / Usecase ----
+function addActor() {
+  const name = document.getElementById("newActorName").value.trim();
+  if (!name) return;
+  const id = "A" + actorCounter++;
+  data.actors.push({ id, name });
+  document.getElementById("newActorName").value = "";
+  render();
+}
+
+function addUsecase() {
+  const name = document.getElementById("newUsecaseName").value.trim();
+  if (!name) return;
+  const id = "UC" + usecaseCounter++;
+  data.use_cases.push({ id, name });
+  document.getElementById("newUsecaseName").value = "";
+  render();
+}
+
+// ---- Relations ----
+function addRelation(fromType, fromId, toType, toId) {
+  if (!fromId || !toId) return;
+
+  if (fromType === "actor" && toType === "usecase") {
+    if (!data.relations.some(r => r.actor_id === fromId && r.use_case_id === toId)) {
+      data.relations.push({ actor_id: fromId, use_case_id: toId });
+    }
+  } else if (fromType === "usecase" && toType === "actor") {
+    if (!data.relations.some(r => r.actor_id === toId && r.use_case_id === fromId)) {
+      data.relations.push({ actor_id: toId, use_case_id: fromId });
+    }
+  } else if (fromType === "usecase" && toType === "usecase") {
+    const uc = data.use_cases.find(u => u.id === fromId);
+    if (uc) {
+      if (!uc.includes) uc.includes = [];
+      if (!uc.includes.includes(toId)) uc.includes.push(toId);
+    }
+  } else if (fromType === "actor" && toType === "actor") {
+    if (!data.relations.some(r => r.actor_id === fromId && r.use_case_id === toId)) {
+      data.relations.push({ actor_id: fromId, use_case_id: toId });
+    }
+  }
+
+  render();
+}
+
+function removeRelation(fromType, fromId, toType, toId) {
+  if (!fromId || !toId) return;
+
+  if (fromType === "usecase" && toType === "usecase") {
+    const uc = data.use_cases.find(u => u.id === fromId);
+    if (uc && uc.includes) uc.includes = uc.includes.filter(i => i !== toId);
+  } else {
+    data.relations = data.relations.filter(r => !(
+      (r.actor_id === fromId && r.use_case_id === toId) ||
+      (r.actor_id === toId && r.use_case_id === fromId)
+    ));
+  }
+
+  render();
+}
+
+// ---- Render ----
+function render() {
+  // Actors
+  const actorsList = document.getElementById("actorsList");
+  actorsList.innerHTML = "";
+  data.actors.forEach(a => {
+    const div = document.createElement("div");
+    div.className = "item";
+    div.innerHTML = `
+      <strong>${a.name} (${a.id})</strong>
+      <div>
+        <select onchange="addRelation('actor','${a.id}',this.value.split(':')[0],this.value.split(':')[1]);this.value=''">
+          <option value="">+ Koppel...</option>
+          ${[...data.actors.filter(x => x.id !== a.id).map(x => `<option value="actor:${x.id}">Actor: ${x.name}</option>`),
+            ...data.use_cases.map(u => `<option value="usecase:${u.id}">Usecase: ${u.name}</option>`)].join('')}
+        </select>
+      </div>
+      <div class="chips">
+        ${data.relations.filter(r => r.actor_id === a.id).map(r => {
+          const uc = data.use_cases.find(u => u.id === r.use_case_id);
+          const ac = data.actors.find(ac => ac.id === r.use_case_id);
+          if (uc) return `<div class="chip">${uc.name}<button onclick="removeRelation('actor','${a.id}','usecase','${uc.id}')">×</button></div>`;
+          if (ac) return `<div class="chip">${ac.name}<button onclick="removeRelation('actor','${a.id}','actor','${ac.id}')">×</button></div>`;
+          return '';
+        }).join('')}
+      </div>
+    `;
+    actorsList.appendChild(div);
+  });
+
+  // Use Cases
+  const usecasesList = document.getElementById("usecasesList");
+  usecasesList.innerHTML = "";
+  data.use_cases.forEach(u => {
+    const div = document.createElement("div");
+    div.className = "item";
+    div.innerHTML = `
+      <strong>${u.name} (${u.id})</strong>
+      <div>
+        <select onchange="addRelation('usecase','${u.id}',this.value.split(':')[0],this.value.split(':')[1]);this.value=''">
+          <option value="">+ Koppel...</option>
+          ${[...data.actors.map(a => `<option value="actor:${a.id}">Actor: ${a.name}</option>`),
+            ...data.use_cases.filter(x => x.id !== u.id).map(x => `<option value="usecase:${x.id}">Usecase: ${x.name}</option>`)].join('')}
+        </select>
+      </div>
+      <div class="chips">
+        ${data.relations.filter(r => r.use_case_id === u.id).map(r => {
+          const ac = data.actors.find(a => a.id === r.actor_id);
+          if (ac) return `<div class="chip">${ac.name}<button onclick="removeRelation('usecase','${u.id}','actor','${ac.id}')">×</button></div>`;
+          return '';
+        }).join('')}
+        ${(u.includes || []).map(inc => {
+          const target = data.use_cases.find(x => x.id === inc);
+          return `<div class="chip">incl. ${target.name}<button onclick="removeRelation('usecase','${u.id}','usecase','${target.id}')">×</button></div>`;
+        }).join('')}
+      </div>
+    `;
+    usecasesList.appendChild(div);
+  });
+
+  document.getElementById("jsonOutput").value = JSON.stringify(data, null, 2);
+  saveToLocalStorage();
+}
+
+// ---- JSON ----
+function generateJSON() {
+  document.getElementById("jsonOutput").value = JSON.stringify(data, null, 2);
+}
+
+function downloadJSON() {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "usecase.json";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ---- Import User Stories ----
+async function importUserStories() {
+  try {
+    const stories = JSON.parse(localStorage.getItem("userStories") || "[]");
+    if (!stories.length) { alert("Geen user stories gevonden in localStorage!"); return; }
+
+    const response = await fetch("http://127.0.0.1:8090/api/usecases/compile_userstories", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ user_stories: stories, system: data.system || "Schoolportaal" })
+    });
+    if (!response.ok) throw new Error(`Fout bij ophalen van usecases: ${response.statusText}`);
+
+    const result = await response.json();
+    data.actors = result.actors || [];
+    data.use_cases = result.use_cases || [];
+    data.relations = result.relations || [];
+
+    actorCounter = data.actors.length ? Math.max(...data.actors.map(a => parseInt(a.id.replace("A","")))) + 1 : 1;
+    usecaseCounter = data.use_cases.length ? Math.max(...data.use_cases.map(u => parseInt(u.id.replace("UC","")))) + 1 : 1;
+
+    render();
+    alert("User stories succesvol geïmporteerd!");
+  } catch (err) {
+    console.error(err);
+    alert("Er is een fout opgetreden bij het importeren van user stories.");
+  }
+}
+
+// ---- Draw.io Editor ----
+const editBtn = document.getElementById("editDiagramBtn");
+const overlay = document.getElementById("drawioOverlay");
+const iframe = document.getElementById("drawioIframe");
+
+let drawioReady = false;
+let pendingXML = null;
+let editorOpen = false;
+
+window.addEventListener('message', (event) => {
+  if (!event.data) return;
+  try {
+    const msg = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+    if (msg.event === "init") {
+      drawioReady = true;
+      if (pendingXML) {
+        iframe.contentWindow.postMessage(JSON.stringify({ action: 'load', autosave: 1, xml: pendingXML }), '*');
+        pendingXML = null;
+      }
+    }
+  } catch(e){}
+});
+
+function loadDrawioXML(xml) {
+  if (drawioReady) {
+    iframe.contentWindow.postMessage(JSON.stringify({ action: 'load', autosave: 1, xml: xml }), '*');
+  } else {
+    pendingXML = xml;
+  }
+}
+
+editBtn.addEventListener("click", async () => {
+  if (!editorOpen) {
+    try {
+      const response = await fetch("http://127.0.0.1:8090/api/usecases/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error("Fout bij genereren diagram");
+
+      const xml = await response.text();
+      overlay.style.display = "block";
+      editBtn.textContent = "Close Editor";
+      editorOpen = true;
+      loadDrawioXML(xml);
+    } catch(err) {
+      console.error(err);
+      alert("Fout bij openen diagram: " + err.message);
+    }
+  } else {
+    overlay.style.display = "none";
+    editBtn.textContent = "Edit Diagram";
+    editorOpen = false;
+  }
+});
+
+// ---- Init ----
+window.addEventListener("DOMContentLoaded", () => {
+  loadFromLocalStorage();
+  render();
+});
+</script>
+
+</body>
+</html>

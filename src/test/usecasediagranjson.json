@@ -1,15 +1,47 @@
 {
+  "system": "Schoolportaal",
   "actors": [
-    {"name": "Beheerder", "type": "primary"},
-    {"name": "Gebruiker", "type": "primary"}
+    {
+      "id": "A1",
+      "name": "Student"
+    },
+    {
+      "id": "A2",
+      "name": "Docent"
+    }
   ],
   "use_cases": [
-    {"name": "Gebruiker blokkeren", "type": "system"},
-    {"name": "Inloggen", "type": "system"}
+    {
+      "id": "UC1",
+      "name": "Inloggen"
+    },
+    {
+      "id": "UC2",
+      "name": "Cijfers bekijken",
+      "includes": ["UC1"]
+    },
+    {
+      "id": "UC3",
+      "name": "Cijfers invoeren",
+      "includes": ["UC1"]
+    }
   ],
   "relations": [
-    {"from": "Beheerder", "to": "Gebruiker blokkeren", "type": "initiates"},
-    {"from": "Gebruiker", "to": "Inloggen", "type": "initiates"},
-    {"from": "Beheerder", "to": "Gebruiker", "type": "manages"}
+    {
+      "actor_id": "A1",
+      "use_case_id": "UC1"
+    },
+    {
+      "actor_id": "A1",
+      "use_case_id": "UC2"
+    },
+    {
+      "actor_id": "A2",
+      "use_case_id": "UC1"
+    },
+    {
+      "actor_id": "A2",
+      "use_case_id": "UC3"
+    }
   ]
 }

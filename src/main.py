@@ -38,7 +38,12 @@ def read_root(request: Request):
 def read_root(request: Request):
     return templates.TemplateResponse("scrumboard.html", {"request": request})
 
-# Scrumboard
+# Narratives
 @app.get("/narratives", response_class=HTMLResponse)
 def read_root(request: Request):
     return templates.TemplateResponse("narratives.html", {"request": request})
+
+# Usecases
+@app.get("/usecases", response_class=HTMLResponse)
+def read_root(request: Request):
+    return templates.TemplateResponse("usecases.html", {"request": request})

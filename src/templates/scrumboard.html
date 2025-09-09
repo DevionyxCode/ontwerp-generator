@@ -141,7 +141,9 @@
         <a href="/userstories">Userstories</a>
         <a href="/scrumboard">Scrumboard</a>
         <a href="/narratives">Narratives</a>
+        <a href="/usecases">Usecasediagram</a>
     </nav>
+    <button class="btn" onclick="importUserStoriesToBacklog()">Import User Stories naar Backlog</button>
     <button class="btn" id="downloadExcelBtn">Download Excel</button>
 </header>
 
@@ -322,6 +324,59 @@ function saveJsonFromEditor() {
         alert("Fout in JSON: " + e.message);
     }
 }
+function importUserStoriesToBacklog() {
+    const stories = JSON.parse(localStorage.getItem("userStories") || "[]");
+    if (stories.length === 0) {
+        alert("Geen user stories gevonden in localStorage!");
+        return;
+    }
+
+    // Zorg dat de backlog bestaat
+    if (!scrumboard["Backlog"]) scrumboard["Backlog"] = [];
+
+    stories.forEach(us => {
+        const asA = us.user_story?.as_a?.trim();
+        const iWant = us.user_story?.i_want?.trim();
+        const soThat = us.user_story?.so_that?.trim();
+
+        // Maak de content zin
+        let contentParts = [];
+        if (asA || iWant || soThat) {
+            const sentence = `Als een ${asA || ''}, wil ik ${iWant || ''}${soThat ? ` zodat ${soThat}` : ''}.`;
+            contentParts.push(sentence);
+        }
+
+        // Voeg description toe als die niet leeg is
+        if (us.description?.trim()) {
+            contentParts.push(`Beschrijving: ${us.description.trim()}`);
+        }
+
+        // Voeg acceptance criteria toe als die bestaan en niet leeg zijn
+        if (us.acceptance_criteria?.length) {
+            const acList = us.acceptance_criteria.filter(ac => ac.trim()).map((ac, i) => `${i+1}. ${ac.trim()}`);
+            if (acList.length) contentParts.push(`Acceptatiecriteria:\n${acList.join('\n')}`);
+        }
+
+        const block = {
+            title: us.title || "",  // Titel bovenaan
+            content: contentParts.join('\n\n'),
+            priority: "Must Have",
+            time_estimate: 20, // 20 minuten
+            assignee: "",
+            tags: [],
+            status: "Backlog",
+            created_at: new Date().toISOString().split('T')[0],
+            updated_at: new Date().toISOString().split('T')[0]
+        };
+
+        scrumboard["Backlog"].push(block);
+    });
+
+    saveScrumboard();
+    renderColumns();
+    alert("User stories succesvol toegevoegd aan Backlog!");
+}
+
 
 // Initial render
 renderColumns();
