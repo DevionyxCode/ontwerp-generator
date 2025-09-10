@@ -242,10 +242,10 @@ class DrawioClassDiagramGenerator:
             if rtype == "association":
                 style += "endArrow=open;"
             elif rtype == "aggregation":
-                style += "endArrow=none;startArrow=diamondOpen;"
+                style += "endArrow=none;startArrow=diamondThin;startFill=0;startSize=10;"
             elif rtype == "composition":
-                style += "endArrow=none;startArrow=diamond;"
-            elif rtype == "generalization":
+                style += "endArrow=none;startArrow=diamondThin;startSize=10;"
+            elif rtype == "Inheritance":
                 style += "endArrow=block;endFill=0;"
             elif rtype == "implementation":
                 style += "endArrow=block;endFill=0;dashed=1;"
