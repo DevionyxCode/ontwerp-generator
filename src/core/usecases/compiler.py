@@ -101,7 +101,7 @@ class DrawioUseCaseDiagramGenerator:
         num_actors = len(actors)
         if num_actors > 0:
             vertical_slot_height = container_h / num_actors
-            actor_x = container_x - self.actor_width - self.padding_x - 200
+            actor_x = container_x - self.actor_width - self.padding_x - 300
             for i, actor in enumerate(actors):
                 y_center = container_y + i * vertical_slot_height + vertical_slot_height / 2
                 y = y_center - self.actor_height / 2

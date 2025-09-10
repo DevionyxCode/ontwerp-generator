@@ -148,51 +148,99 @@
     <div class="modal-content">
         <h2>JSON Input</h2>
         <textarea id="jsonInput">
-[
-  {
-    "name": "Person",
-    "attributes": [
-      {"name": "name", "type": "String", "access": "protected"}
-    ]
-  },
-  {
-    "name": "Customer",
-    "attributes": [
-      {"name": "customerId", "type": "int", "access": "private"}
-    ],
-    "methods": [
-      {"name": "placeOrder", "return_type": "Order", "access": "public"}
-    ],
-    "relationships": [
-      {"type": "inheritance", "target": "Person"}
-    ]
-  },
-  {
-    "name": "Order",
-    "attributes": [
-      {"name": "orderId", "type": "int", "access": "private"}
-    ],
-    "relationships": [
-      {"type": "association", "target": "Customer", "source_multiplicity": "*", "target_multiplicity": "1"},
-      {"type": "composition", "target": "OrderLine", "source_multiplicity": "1", "target_multiplicity": "1..*"}
-    ]
-  },
-  {
-    "name": "OrderLine",
-    "attributes": [
-      {"name": "quantity", "type": "int", "access": "private"}
-    ],
-    "relationships": [
-      {"type": "aggregation", "target": "Product", "source_multiplicity": "*", "target_multiplicity": "1"}
-    ]
-  },
-  {
-    "name": "Product",
-    "attributes": [
-      {"name": "productId", "type": "int", "access": "private"}
-    ]
-  }
-]
+{
+  "classes": [
+    {
+      "id": "C1",
+      "name": "User",
+      "attributes": ["id: int", "name: str", "email: str", "password: str"],
+      "methods": ["login()", "logout()", "updateProfile()"]
+    },
+    {
+      "id": "C2",
+      "name": "Post",
+      "attributes": ["id: int", "content: str", "author_id: int", "created_at: datetime"],
+      "methods": ["publish()", "delete()", "edit()"]
+    },
+    {
+      "id": "C3",
+      "name": "Comment",
+      "attributes": ["id: int", "post_id: int", "author_id: int", "text: str", "created_at: datetime"],
+      "methods": ["add()", "delete()"]
+    },
+    {
+      "id": "C4",
+      "name": "Category",
+      "attributes": ["id: int", "name: str", "description: str"],
+      "methods": ["addPost()", "removePost()"]
+    },
+    {
+      "id": "C5",
+      "name": "Tag",
+      "attributes": ["id: int", "name: str"],
+      "methods": ["addToPost()", "removeFromPost()"]
+    },
+    {
+      "id": "C6",
+      "name": "Profile",
+      "attributes": ["user_id: int", "bio: str", "avatar_url: str"],
+      "methods": ["updateBio()", "updateAvatar()"]
+    },
+    {
+      "id": "C7",
+      "name": "Notification",
+      "attributes": ["id: int", "user_id: int", "message: str", "read: bool"],
+      "methods": ["send()", "markRead()"]
+    },
+    {
+      "id": "C8",
+      "name": "Message",
+      "attributes": ["id: int", "sender_id: int", "receiver_id: int", "content: str", "sent_at: datetime"],
+      "methods": ["send()", "delete()"]
+    },
+    {
+      "id": "C9",
+      "name": "Group",
+      "attributes": ["id: int", "name: str", "description: str"],
+      "methods": ["addUser()", "removeUser()"]
+    },
+    {
+      "id": "C10",
+      "name": "Event",
+      "attributes": ["id: int", "name: str", "date: datetime", "location: str"],
+      "methods": ["create()", "cancel()"]
+    },
+    {
+      "id": "C11",
+      "name": "Like",
+      "attributes": ["id: int", "user_id: int", "post_id: int"],
+      "methods": ["add()", "remove()"]
+    },
+    {
+      "id": "C12",
+      "name": "Attachment",
+      "attributes": ["id: int", "post_id: int", "file_url: str", "file_type: str"],
+      "methods": ["upload()", "delete()"]
+    }
+  ],
+  "relations": [
+    {"from": "C1", "to": "C2", "type": "association"},
+    {"from": "C1", "to": "C3", "type": "association"},
+    {"from": "C2", "to": "C3", "type": "aggregation"},
+    {"from": "C2", "to": "C4", "type": "association"},
+    {"from": "C2", "to": "C5", "type": "association"},
+    {"from": "C1", "to": "C6", "type": "composition"},
+    {"from": "C3", "to": "C5", "type": "dependency"},
+    {"from": "C1", "to": "C7", "type": "association"},
+    {"from": "C1", "to": "C8", "type": "association"},
+    {"from": "C1", "to": "C9", "type": "association"},
+    {"from": "C2", "to": "C11", "type": "aggregation"},
+    {"from": "C2", "to": "C12", "type": "composition"},
+    {"from": "C9", "to": "C10", "type": "association"},
+    {"from": "C8", "to": "C9", "type": "dependency"}
+  ]
+}
+
         </textarea>
         <button class="btn" id="generateBtn">Generate Class Diagram</button>
     </div>

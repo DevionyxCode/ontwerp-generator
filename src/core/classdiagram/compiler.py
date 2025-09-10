@@ -1,250 +1,279 @@
-import json
-import math
 import xml.sax.saxutils as saxutils
 from typing import List, Dict, Any, Tuple
-
+import math
 
 class DrawioClassDiagramGenerator:
-    """
-    Genereert een Draw.io XML-string voor een klassendiagram vanuit een JSON-input.
-    Deze versie genereert een ongecomprimeerde XML-string.
-    """
-
-    def __init__(self, padding: int = 150, class_width: int = 240):
+    def __init__(self, padding: int = 100, class_width: int = 220):
         self.padding = padding
         self.class_width = class_width
         self.classes_input: List[Dict[str, Any]] = []
-        self.colors = ["#FF0000", "#00AA00", "#0000FF", "#FFAA00", "#00AAAA", "#AA00AA", "#000000"]
-        self.container_style = "swimlane;fontStyle=0;childLayout=stackLayout;horizontal=1;startSize=30;horizontalStack=0;resizeParent=1;resizeParentCheck=0;collapsible=0;marginBottom=0;html=1;"
-        self.title_style = "text;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;fontStyle=1"
-        self.member_style = "text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;"
-        self.relationship_styles = {
-            "inheritance": {"endArrow": "block", "endFill": "0", "startArrow": "none"},
-            "composition": {"endArrow": "none", "endFill": "0", "startArrow": "diamond", "startFill": "1"},
-            "aggregation": {"endArrow": "none", "endFill": "0", "startArrow": "diamond", "startFill": "0"},
-            "association": {"endArrow": "open", "endFill": "0", "startArrow": "none"},
-            "default": {"endArrow": "none", "endFill": "0", "startArrow": "none"},
+        self.colors = [
+            "#FF0000", "#00AA00", "#0000FF", "#FFAA00",
+            "#00AAAA", "#AA00AA", "#000000", "#AAAAAA",
+        ]
+        self.used_points = {
+            "left_x": set(),
+            "right_x": set(),
+            "bridge_y": set()
         }
-        self.relation_styles = {
-            "inheritance": {"endArrow": "block", "endFill": "0", "startArrow": "none"},
-            "composition": {"endArrow": "none", "endFill": "0", "startArrow": "diamond", "startFill": "1"},
-            "aggregation": {"endArrow": "none", "endFill": "0", "startArrow": "diamond", "startFill": "0"},
-            "association": {"endArrow": "open", "endFill": "0", "startArrow": "none"},
-            "default": {"endArrow": "none", "endFill": "0", "startArrow": "none"},
-        }
+
 
     def _escape(self, text: str) -> str:
         return saxutils.escape(text, {"\"": "&quot;", "'": "&apos;"})
 
-    def _create_cell(self, id_: int, x: int, y: int, w: int, h: int, text: str, style: str) -> str:
-        return f'\n    <mxCell id="{id_}" value="{self._escape(text)}" style="{style}" vertex="1" parent="1">\n      <mxGeometry x="{x}" y="{y}" width="{w}" height="{h}" as="geometry" />\n    </mxCell>'
+    def _create_class_cell(self, cls: Dict[str, Any], x: int, y: int, cell_id: int) -> Tuple[str, int, Dict]:
+        line_h = 22
+        title_h = 40
+        separator_h = 1
 
-    def _make_class_cell(self, json_data: Dict[str, Any], x: int, y: int, start_id: int) -> Tuple[
-        str, int, int, int, Dict]:
-        def format_members(members: List[Dict], is_method: bool = False) -> str:
-            lines = []
-            for member in members:
-                access_map = {"public": "+", "private": "-", "protected": "#"}
-                access = access_map.get(member.get("access", "private"), "-")
-                if is_method:
-                    params = ", ".join(member.get("parameters", []))
-                    ret_type = member.get("return_type", "void")
-                    line = f'{access} {member["name"]}({params}): {ret_type}'
-                else:
-                    line = f'{access} {member["name"]}: {member["type"]}'
-                lines.append(self._escape(line))
-            return "<br>".join(lines)
+        attr_h = max(25, len(cls.get("attributes", [])) * line_h)
+        meth_h = max(25, len(cls.get("methods", [])) * line_h)
+        total_h = title_h + separator_h + attr_h + separator_h + meth_h + 10
 
-        attributes_str = format_members(json_data.get("attributes", []))
-        methods_str = format_members(json_data.get("methods", []), is_method=True)
-        line_h, min_comp_h, title_h, line_separator_h = 20, 25, 30, 1
+        container_style = "whiteSpace=wrap;html=1;strokeColor=#000000;fillColor=#FFFFFF;"
+        title_style = "text;align=center;verticalAlign=middle;fontSize=18;fontStyle=1;color=#000000;whiteSpace=wrap;html=1;"
+        member_style = "text;align=left;verticalAlign=middle;fontSize=16;color=#000000;whiteSpace=wrap;html=1;"
+        separator_style = "line;strokeWidth=1;strokeColor=#000000;"
 
-        attr_h = max(min_comp_h, len(json_data.get("attributes", [])) * line_h)
-        meth_h = max(min_comp_h, len(json_data.get("methods", [])) * line_h)
-        total_h = title_h + attr_h + line_separator_h + meth_h
+        cells = []
 
-        cells, cell_id = [], start_id
-        cells.append(self._create_cell(cell_id, x, y, self.class_width, total_h, "", self.container_style))
+        # container
+        cells.append(
+            f'<mxCell id="{cell_id}" value="" style="{container_style}" vertex="1" parent="1">'
+            f'<mxGeometry x="{x}" y="{y}" width="{self.class_width}" height="{total_h}" as="geometry"/>'
+            f'</mxCell>'
+        )
         container_id = cell_id
         cell_id += 1
-        cells.append(self._create_cell(cell_id, x, y, self.class_width, title_h, json_data['name'], self.title_style))
-        cell_id += 1
+
+        # title
         cells.append(
-            self._create_cell(cell_id, x, y + title_h, self.class_width, attr_h, attributes_str, self.member_style))
+            f'<mxCell id="{cell_id}" value="{self._escape(cls["name"])}" style="{title_style}" vertex="1" parent="{container_id}">'
+            f'<mxGeometry x="0" y="0" width="{self.class_width}" height="{title_h}" as="geometry"/>'
+            f'</mxCell>'
+        )
         cell_id += 1
 
-        separator_style = "line;strokeWidth=1;html=1;fontStyle=1;align=center;verticalAlign=middle;"
-        cells.append(self._create_cell(cell_id, x, y + title_h + attr_h, self.class_width, line_separator_h, "",
-                                       separator_style))
+        # line under title
+        cells.append(
+            f'<mxCell id="{cell_id}" value="" style="{separator_style}" vertex="1" parent="{container_id}">'
+            f'<mxGeometry x="0" y="{title_h}" width="{self.class_width}" height="{separator_h}" as="geometry"/>'
+            f'</mxCell>'
+        )
         cell_id += 1
 
-        cells.append(self._create_cell(cell_id, x, y + title_h + attr_h + line_separator_h, self.class_width, meth_h,
-                                       methods_str,
-                                       self.member_style))
+        # attributes
+        for i, attr in enumerate(cls.get("attributes", [])):
+            cells.append(
+                f'<mxCell id="{cell_id}" value="{self._escape(attr)}" style="{member_style}" vertex="1" parent="{container_id}">'
+                f'<mxGeometry x="0" y="{title_h + separator_h + i*line_h}" width="{self.class_width}" height="{line_h}" as="geometry"/>'
+                f'</mxCell>'
+            )
+            cell_id += 1
+
+        # line under attributes
+        cells.append(
+            f'<mxCell id="{cell_id}" value="" style="{separator_style}" vertex="1" parent="{container_id}">'
+            f'<mxGeometry x="0" y="{title_h + separator_h + attr_h}" width="{self.class_width}" height="{separator_h}" as="geometry"/>'
+            f'</mxCell>'
+        )
         cell_id += 1
 
-        class_data = {"name": json_data['name'], "pos": (x, y), "width": self.class_width, "height": total_h,
-                      "json": json_data, "container_id": container_id}
-        return "\n".join(cells), cell_id, self.class_width, total_h, class_data
+        # methods
+        for i, method in enumerate(cls.get("methods", [])):
+            cells.append(
+                f'<mxCell id="{cell_id}" value="{self._escape(method)}" style="{member_style}" vertex="1" parent="{container_id}">'
+                f'<mxGeometry x="0" y="{title_h + 2*separator_h + attr_h + i*line_h}" width="{self.class_width}" height="{line_h}" as="geometry"/>'
+                f'</mxCell>'
+            )
+            cell_id += 1
 
-    def _generate_diagram_layout(self) -> Tuple[List[Dict[str, Any]], int]:
-        if not self.classes_input: return [], 2
+        class_data = {
+            "id": cls["id"],
+            "pos": (x, y),
+            "width": self.class_width,
+            "height": total_h,
+            "container_id": container_id
+        }
 
+        return "\n".join(cells), cell_id, class_data
+
+    def _generate_layout(self) -> Tuple[List[Dict[str, Any]], int]:
+        classes_info = []
+        cell_id = 2
         total_classes = len(self.classes_input)
+        if total_classes == 0:
+            return classes_info, cell_id
+
         columns = math.ceil(math.sqrt(total_classes))
+        row_heights = [0] * math.ceil(total_classes / columns)
 
-        row_max_heights = {}
-        for i, class_json in enumerate(self.classes_input):
-            row = i // columns
-            attr_h = max(25, len(class_json.get("attributes", [])) * 20)
-            meth_h = max(25, len(class_json.get("methods", [])) * 20)
-            class_h = 30 + attr_h + 1 + meth_h
-            if row not in row_max_heights or class_h > row_max_heights[row]:
-                row_max_heights[row] = class_h
+        temp_classes = []
+        for cls in self.classes_input:
+            xml, cell_id, class_data = self._create_class_cell(cls, 0, 0, cell_id)
+            class_data['xml'] = xml
+            temp_classes.append(class_data)
 
-        y_positions = []
-        current_y = 0
-        for row in range(math.ceil(total_classes / columns)):
-            y_positions.append(current_y)
-            current_y += row_max_heights.get(row, 0) + self.padding
+        for idx, cls in enumerate(temp_classes):
+            row = idx // columns
+            row_heights[row] = max(row_heights[row], cls['height'])
 
-        cell_id, classes_info = 2, []
-        for i, class_json in enumerate(self.classes_input):
-            col, row = i % columns, i // columns
-            x = col * (self.class_width + self.padding)
-            y = y_positions[row]
+        padding = self.padding
+        col_gap = 100
+        x_start, y_start = 20, 20
+        y_offset = 150  # <<< voeg deze toe om alles iets lager te zetten
+        x_offset = 150  # schuif alles iets naar rechts
+        y = y_start + y_offset
+        for row_idx in range(len(row_heights)):
+            x = x_start + x_offset
+            for col_idx in range(columns):
+                class_idx = row_idx * columns + col_idx
+                if class_idx >= total_classes:
+                    break
+                cls = temp_classes[class_idx]
+                cls['pos'] = (x, y)
+                xml_lines = cls['xml'].splitlines()
+                for i, line in enumerate(xml_lines):
+                    if f'<mxCell id="{cls["container_id"]}"' in line:
+                        xml_lines[i] = line.replace(f'x="0"', f'x="{cls["pos"][0]}"') \
+                            .replace(f'y="0"', f'y="{cls["pos"][1]}"')
+                cls['xml'] = "\n".join(xml_lines)
 
-            xml, next_id, w, h, data = self._make_class_cell(class_json, x, y, cell_id)
-            data['xml'] = xml
-            classes_info.append(data)
-            cell_id = next_id
+                classes_info.append(cls)
+                x += cls['width'] + col_gap
+            y += row_heights[row_idx] + padding
 
         return classes_info, cell_id
 
-    def _generate_relationship_cells(self, classes_info: List[Dict[str, Any]], start_cell_id: int) -> str:
-        class_map = {c["name"]: c for c in classes_info}
-        cell_id = start_cell_id
-        relation_cells, rel_idx = [], 0
+    def _get_connection_points(self, cls):
+        x, y = cls['pos']
+        w, h = cls['width'], cls['height']
+        return {
+            'top': (x + w/2, y),
+            'bottom': (x + w/2, y + h),
+            'left': (x, y + h/2),
+            'right': (x + w, y + h/2)
+        }
 
-        used_waypoints_x = set()
-        used_waypoints_y = set()
+    def _calculate_orthogonal_path(self, source_cls, target_cls, fk_name="FK", step=8):
+        used_points = self.used_points
+        gap = 40
 
-        def get_unique_x(x: float) -> float:
-            offset = 0
-            original_x = x
-            while x in used_waypoints_x:
-                offset += 15
-                x = original_x - offset
-            used_waypoints_x.add(x)
-            return x
+        # Start- en eindpunten
+        x0, y0 = self._get_connection_points(source_cls)['left']
+        x1, y1 = self._get_connection_points(target_cls)['right']
 
-        def get_unique_y(y: float) -> float:
-            offset = 0
-            original_y = y
-            while y in used_waypoints_y:
-                offset += 10
-                y = original_y + offset
-            used_waypoints_y.add(y)
-            return y
+        # --- Startpoint Y vrijmaken (WP1 = startpoint Y) ---
+        while (x0, y0) in used_points.get("start_points", set()):
+            print(f"[DEBUG] Start point ({x0},{y0}) in use, shifting up by {step}")
+            y0 -= step
+        used_points.setdefault("start_points", set()).add((x0, y0))
 
-        for source_info in classes_info:
-            for rel in source_info["json"].get("relationships", []):
-                target_name = rel.get("target")
-                if not target_name or target_name not in class_map: continue
+        # --- Linker X vrijmaken (WP1/2) ---
+        left_x = int(x0 - gap)
+        while left_x in used_points.get("left_x", set()) or left_x in used_points.get("right_x", set()):
+            print(f"[DEBUG] left_x {left_x} in use, shifting left by {step}")
+            left_x -= step
+        used_points.setdefault("left_x", set()).add(left_x)
 
-                target_info = class_map[target_name]
-                style_props = self.relation_styles.get(rel.get("type"), self.relation_styles["default"])
+        # --- Rechter X vrijmaken (WP3/4) ---
+        right_x = int(x1 + gap)
+        while right_x in used_points.get("right_x", set()) or right_x in used_points.get("left_x", set()):
+            print(f"[DEBUG] right_x {right_x} in use, shifting right by {step}")
+            right_x += step
+        used_points.setdefault("right_x", set()).add(right_x)
 
-                source_x, source_y = source_info["pos"][0], source_info["pos"][1]
-                target_x, target_y = target_info["pos"][0], target_info["pos"][1]
+        # --- Brug Y vrijmaken (WP2/3) ---
+        bridge_y = int(target_cls['pos'][1] - target_cls['height'] / 4)
+        while bridge_y < 0 or bridge_y in used_points.get("bridge_y", set()):
+            print(f"[DEBUG] bridge_y {bridge_y} in use or <0, shifting down by {step}")
+            bridge_y += step
+        used_points.setdefault("bridge_y", set()).add(bridge_y)
 
-                source_mid_x = source_x + source_info["width"] / 2
-                source_mid_y = source_y + source_info["height"] / 2
-                target_mid_x = target_x + target_info["width"] / 2
-                target_mid_y = target_y + target_info["height"] / 2
+        # --- Endpoint Y vrijmaken (WP4 = endpoint Y) ---
+        while (x1, y1) in used_points.get("end_points", set()):
+            print(f"[DEBUG] End point ({x1},{y1}) in use, shifting down by {step}")
+            y1 += step
+        used_points.setdefault("end_points", set()).add((x1, y1))
 
-                source_point = (source_x + source_info["width"], source_mid_y) if source_x < target_x else (source_x,
-                                                                                                            source_mid_y)
-                target_point = (target_x, target_mid_y) if source_x < target_x else (target_x + target_info["width"],
-                                                                                     target_mid_y)
+        # --- Waypoints maken ---
+        wp1 = (left_x, y0)  # WP1 = exact startpoint Y
+        wp2 = (left_x, bridge_y)
+        wp3 = (right_x, bridge_y)
+        wp4 = (right_x, y1)  # WP4 = exact endpoint Y
 
-                points = []
-                if abs(source_x - target_x) < 50:
-                    points.append(f'<mxPoint x="{source_point[0]}" y="{source_point[1]}" />')
-                    points.append(f'<mxPoint x="{target_point[0]}" y="{target_point[1]}" />')
-                else:
-                    wp_x1 = get_unique_x(source_point[0] + self.padding / 2)
-                    wp_x2 = get_unique_x(target_point[0] - self.padding / 2)
-                    wp_y = get_unique_y(min(source_y, target_y) - self.padding / 4)
+        print(f"[{fk_name}] Final waypoints: WP1{wp1}, WP2{wp2}, WP3{wp3}, WP4{wp4}")
+        return [wp1, wp2, wp3, wp4]
 
-                    points.append(f'<mxPoint x="{source_point[0]}" y="{source_point[1]}" />')
-                    points.append(f'<mxPoint x="{wp_x1}" y="{source_point[1]}" />')
-                    points.append(f'<mxPoint x="{wp_x1}" y="{wp_y}" />')
-                    points.append(f'<mxPoint x="{wp_x2}" y="{wp_y}" />')
-                    points.append(f'<mxPoint x="{wp_x2}" y="{target_point[1]}" />')
-                    points.append(f'<mxPoint x="{target_point[0]}" y="{target_point[1]}" />')
+    def _generate_relation_cells(self, relations: List[Dict[str, Any]], classes_info: List[Dict[str, Any]],
+                                 start_id: int) -> str:
+        class_map = {c['id']: c for c in classes_info}
+        cell_id = start_id
+        relation_cells = []
+        color_count = len(self.colors)
 
-                color = self.colors[rel_idx % len(self.colors)]
-                line_style = f"edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor={color};strokeWidth=2;"
-                line_style += "".join(f"{k}={v};" for k, v in style_props.items())
-                line_style += f"sourceLabel={self._escape(rel.get('source_multiplicity', ''))};targetLabel={self._escape(rel.get('target_multiplicity', ''))};"
+        for idx, rel in enumerate(relations):
+            source_cls = class_map[rel["from"]]
+            target_cls = class_map[rel["to"]]
 
-                points_xml = f'<Array as="points">\n{"".join(points)}\n</Array>' if points else ""
+            # --- bereken waypoints
+            waypoints = self._calculate_orthogonal_path(source_cls, target_cls)
 
-                source_container_id = source_info["container_id"]
-                target_container_id = target_info["container_id"]
+            # --- fictieve start en eind waypoints
+            start_x = source_cls['pos'][0]  # exact linkerzijde van container
+            start_y = waypoints[0][1]  # hoogte van WP1
+            end_x = target_cls['pos'][0] + target_cls['width']  # rechterzijde van target container
+            end_y = waypoints[-1][1]  # hoogte van WP4
 
-                relation_cells.append(f'''
-                <mxCell id="{cell_id}" style="{line_style}" edge="1" parent="1" source="{source_container_id}" target="{target_container_id}">
-                  <mxGeometry relative="1" as="geometry">
-                    {points_xml}
-                  </mxGeometry>
-                </mxCell>''')
-                cell_id += 1
-                rel_idx += 1
+            # volledige puntenlijst: start + originele waypoints + eind
+            full_points = [(start_x, start_y)] + waypoints + [(end_x, end_y)]
+
+            # genereer XML
+            points_xml = "<Array as='points'>" + "".join(
+                f'<mxPoint x="{x}" y="{y}"/>' for x, y in full_points
+            ) + "</Array>"
+
+            # Kies kleur
+            color = self.colors[idx % color_count]
+
+            # Stijl op basis van type relatie
+            rtype = rel.get("type", "association")
+            style = f"html=1;strokeWidth=2;strokeColor={color};"
+            if rtype == "association":
+                style += "endArrow=open;"
+            elif rtype == "aggregation":
+                style += "endArrow=none;startArrow=diamondOpen;"
+            elif rtype == "composition":
+                style += "endArrow=none;startArrow=diamond;"
+            elif rtype == "generalization":
+                style += "endArrow=block;endFill=0;"
+            elif rtype == "implementation":
+                style += "endArrow=block;endFill=0;dashed=1;"
+            elif rtype == "dependency":
+                style += "endArrow=open;dashed=1;"
+
+            # Creeer de edge
+            relation_cells.append(
+                f'<mxCell id="{cell_id}" style="{style}" edge="1" parent="1" '
+                f'source="{source_cls["container_id"]}" target="{target_cls["container_id"]}">'
+                f'<mxGeometry relative="1" as="geometry">{points_xml}</mxGeometry>'
+                f'</mxCell>'
+            )
+            cell_id += 1
 
         return "\n".join(relation_cells)
 
-    def run(self, json_data: List[Dict[str, Any]]) -> str:
-        """
-        Hoofdfunctie om de volledige Draw.io XML-string te genereren en terug te sturen.
-        """
-        self.classes_input = json_data
-        layout_info, last_class_cell_id = self._generate_diagram_layout()
+    def run(self, json_data: Dict[str, Any]) -> str:
+        self.classes_input = json_data.get("classes", [])
+        layout_info, last_class_id = self._generate_layout()
         class_cells_xml = "\n".join(c['xml'] for c in layout_info)
-        relationship_cells_xml = self._generate_relationship_cells(layout_info, last_class_cell_id)
+        relationship_cells_xml = self._generate_relation_cells(json_data.get("relations", []), layout_info, last_class_id)
 
         header = '''<?xml version="1.0" encoding="UTF-8"?>
-<mxfile host="app.diagrams.net" agent="python-script-v3" version="24.0.0" type="device">
+<mxfile host="app.diagrams.net">
 <diagram name="Class Diagram" id="diagram1">
 <mxGraphModel dx="1400" dy="900" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="827" background="#FFFFFF" math="0" shadow="0">
 <root><mxCell id="0"/><mxCell id="1" parent="0"/>'''
-        footer = '''</root></mxGraphModel></diagram></mxfile>'''
+        footer = '</root></mxGraphModel></diagram></mxfile>'
 
-        full_xml = header + class_cells_xml + "\n" + relationship_cells_xml + footer
-
-        return full_xml
-
-
-if __name__ == "__main__":
-    json_string = """
-    [
-      { "name": "Person", "attributes": [{"name": "name", "type": "String", "access": "protected"}]},
-      { "name": "Customer", "attributes": [{"name": "customerId", "type": "int", "access": "private"}], "methods": [{"name": "placeOrder", "return_type": "Order", "access": "public"}], "relationships": [{"type": "inheritance", "target": "Person"}]},
-      { "name": "Order", "attributes": [{"name": "orderId", "type": "int", "access": "private"}], "relationships": [{"type": "association", "target": "Customer", "source_multiplicity": "*", "target_multiplicity": "1"}, {"type": "composition", "target": "OrderLine", "source_multiplicity": "1", "target_multiplicity": "1..*"}]},
-      { "name": "OrderLine", "attributes": [{"name": "quantity", "type": "int", "access": "private"}], "relationships": [{"type": "aggregation", "target": "Product", "source_multiplicity": "*", "target_multiplicity": "1"}]},
-      { "name": "Product", "attributes": [{"name": "productId", "type": "int", "access": "private"}]}
-    ]
-    """
-    class_diagram_json = json.loads(json_string)
-
-    generator = DrawioClassDiagramGenerator()
-    drawio_xml_string = generator.run(class_diagram_json)
-
-    output_filename = "class_diagram_string_output.drawio"
-    try:
-        with open(output_filename, "w", encoding="utf-8") as f:
-            f.write(drawio_xml_string)
-        print(f"✅ Succesvol '{output_filename}' gegenereerd. De output is een ongecomprimeerde XML-string.")
-    except IOError as e:
-        print(f"❌ Fout bij het schrijven naar het bestand: {e}")
+        return header + class_cells_xml + "\n" + relationship_cells_xml + footer
