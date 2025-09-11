@@ -135,6 +135,7 @@
     </nav>
     <div class="header-right">
         <button class="btn" id="openModalBtn">Generate</button>
+        <button class="btn" id="generateFromStoriesBtn">Generate ERD from User Stories</button>
     </div>
 </header>
 
@@ -362,6 +363,42 @@ window.addEventListener("click", (e) => {
     if (e.target == modal) modal.style.display = "none";
 });
 
+</script>
+<script>
+const generateFromStoriesBtn = document.getElementById("generateFromStoriesBtn");
+const apiKey = localStorage.getItem("apiKey"); // API key moet je eerst opslaan op home page
+
+// Generate ERD van User Stories
+generateFromStoriesBtn.addEventListener("click", async () => {
+    try {
+        // Haal user stories op uit localStorage
+        let stories = JSON.parse(localStorage.getItem("userStories") || "[]");
+        console.log(stories)
+        if (stories.length === 0) throw new Error("Geen user stories gevonden in localStorage");
+
+        const response = await fetch("http://127.0.0.1:8090/api/ai/userstorytoerd", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({ user_stories: stories })
+        });
+
+        if (!response.ok) throw new Error("Error generating ERD from user stories");
+
+        const data = await response.json();
+
+        // data.erd bevat JSON output van de API, die je evt. kan tonen of opslaan
+        localStorage.setItem("erdJson", data.erd); // opslaan zodat de andere Generate-knop kan gebruiken
+        jsonInput.value = data.erd; // zet ook in textarea
+
+        alert("ERD gegenereerd! Gebruik nu de 'Generate ERD' knop om het in Draw.io te laden.");
+
+    } catch (err) {
+        alert("Fout: " + err.message);
+    }
+});
 </script>
 
 </body>

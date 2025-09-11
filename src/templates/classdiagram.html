@@ -135,6 +135,7 @@
     </nav>
     <div class="header-right">
         <button class="btn" id="openModalBtn">Generate</button>
+        <button class="btn" id="generateClassDiagramAI">Generate via AI</button>
     </div>
 </header>
 
@@ -306,7 +307,45 @@ window.addEventListener("click", (e) => {
     }
 });
 </script>
+<script>
+const generateAiBtn = document.getElementById("generateClassDiagramAI");
 
+// Functie om de AI request te sturen
+generateAiBtn.addEventListener("click", async () => {
+    try {
+        const erdJson = localStorage.getItem("erdJson");
+        const apiKey = localStorage.getItem("apiKey"); // API key moet je eerst opslaan op home page
+
+        if (!erdJson) throw new Error("Geen ERD JSON gevonden in localStorage!");
+        if (!apiKey) throw new Error("Geen API Key gevonden in localStorage!");
+
+        const response = await fetch("http://127.0.0.1:8090/api/ai/erdtoclassdiagram", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({ erd_json: JSON.parse(erdJson) })
+        });
+
+        if (!response.ok) {
+            const text = await response.text();
+            throw new Error(`Server error: ${response.status} - ${text}`);
+        }
+
+        const data = await response.json();
+        console.log("Class Diagram AI:", data.class_diagram);
+
+        // Optioneel: direct opslaan in localStorage
+        localStorage.setItem("classDiagramJSON", data.class_diagram);
+
+        alert("Class Diagram via AI gegenereerd en opgeslagen in localStorage!");
+
+    } catch (err) {
+        alert("Fout bij genereren: " + err.message);
+    }
+});
+</script>
 
 </body>
 </html>

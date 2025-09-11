@@ -137,5 +137,22 @@
         <button class="btn" id="openModalBtn">Generate</button>
     </div>
 </header>
+
+<p>dit moet een google ai studio api key zijn je kan 250 requests per dag doen</p>
+<input type="text" id="apiKeyInput" placeholder="Voer je API Key in">
+<button id="saveApiKeyBtn">Opslaan</button>
+
+<script>
+const saveBtn = document.getElementById("saveApiKeyBtn");
+const input = document.getElementById("apiKeyInput");
+
+saveBtn.addEventListener("click", () => {
+    const key = input.value.trim();
+    if (!key) return alert("Voer een geldige API Key in!");
+    localStorage.setItem("apiKey", key);
+    alert("API Key opgeslagen in localStorage!");
+});
+</script>
+
 </body>
 </html>
