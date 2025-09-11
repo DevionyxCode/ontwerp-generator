@@ -316,6 +316,13 @@ const generateBtn = document.getElementById("generateBtn");
 const jsonInput = document.getElementById("jsonInput");
 const iframe = document.getElementById("drawioIframe");
 
+// Haal opgeslagen JSON op bij laden
+window.addEventListener("DOMContentLoaded", () => {
+    const savedJson = localStorage.getItem("erdJson");
+    if (savedJson) {
+        jsonInput.value = savedJson;
+    }
+});
 
 // Open modal
 openModalBtn.addEventListener("click", () => {
@@ -325,6 +332,9 @@ openModalBtn.addEventListener("click", () => {
 // Generate ERD
 generateBtn.addEventListener("click", async () => {
     try {
+        // JSON opslaan in localStorage
+        localStorage.setItem("erdJson", jsonInput.value);
+
         const response = await fetch("http://127.0.0.1:8090/api/erd/generate", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -335,22 +345,23 @@ generateBtn.addEventListener("click", async () => {
 
         const xml = await response.text();
 
-        // Send XML to Draw.io iframe
+        // Stuur XML naar Draw.io iframe
         iframe.contentWindow.postMessage(
             JSON.stringify({ action: 'load', autosave: 1, xml: xml }),
             '*'
         );
 
-        modal.style.display = "none"; // Close modal
+        modal.style.display = "none"; // modal sluiten
     } catch (err) {
         alert("Fout: " + err.message);
     }
 });
 
-// Click outside modal closes it
+// Click buiten modal sluit deze
 window.addEventListener("click", (e) => {
     if (e.target == modal) modal.style.display = "none";
 });
+
 </script>
 
 </body>

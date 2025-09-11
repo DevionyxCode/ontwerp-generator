@@ -253,6 +253,14 @@ const generateBtn = document.getElementById("generateBtn");
 const jsonInput = document.getElementById("jsonInput");
 const iframe = document.getElementById("drawioIframe");
 
+// Load saved JSON from localStorage
+window.addEventListener("DOMContentLoaded", () => {
+    const savedJson = localStorage.getItem("classDiagramJSON");
+    if (savedJson) {
+        jsonInput.value = savedJson;
+    }
+});
+
 // Open modal
 openModalBtn.addEventListener("click", () => {
     modal.style.display = "flex";
@@ -261,10 +269,15 @@ openModalBtn.addEventListener("click", () => {
 // Generate Class Diagram
 generateBtn.addEventListener("click", async () => {
     try {
+        const jsonData = JSON.parse(jsonInput.value);
+
+        // Save JSON to localStorage
+        localStorage.setItem("classDiagramJSON", JSON.stringify(jsonData));
+
         const response = await fetch("http://127.0.0.1:8090/api/classdiagram/generate", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ data: JSON.parse(jsonInput.value) })
+            body: JSON.stringify({ data: jsonData })
         });
 
         if (!response.ok) {
@@ -293,6 +306,7 @@ window.addEventListener("click", (e) => {
     }
 });
 </script>
+
 
 </body>
 </html>
