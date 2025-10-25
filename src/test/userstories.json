@@ -1,0 +1,266 @@
+[
+    {
+        "id": "",
+        "title": "Klant toevoegen",
+        "user_story": {
+            "as_a": "medewerker",
+            "i_want": "een klant toevoegen",
+            "so_that": "een leasecontract kan worden opgesteld"
+        },
+        "description": "",
+        "acceptance_criteria": []
+    },
+    {
+        "id": "",
+        "title": "Klant bekijken",
+        "user_story": {
+            "as_a": "medewerker",
+            "i_want": "klantgegevens bekijken",
+            "so_that": "ik inzicht heb in de administratie"
+        },
+        "description": "",
+        "acceptance_criteria": []
+    },
+    {
+        "id": "",
+        "title": "Klant wijzigen",
+        "user_story": {
+            "as_a": "senior medewerker",
+            "i_want": "klantgegevens wijzigen",
+            "so_that": "de administratie actueel blijft"
+        },
+        "description": "",
+        "acceptance_criteria": []
+    },
+    {
+        "id": "",
+        "title": "Klant verwijderen",
+        "user_story": {
+            "as_a": "senior medewerker",
+            "i_want": "klanten verwijderen",
+            "so_that": "foutieve of verouderde gegevens niet bewaard blijven"
+        },
+        "description": "",
+        "acceptance_criteria": []
+    },
+    {
+        "id": "",
+        "title": "Gebruiker toevoegen",
+        "user_story": {
+            "as_a": "beheerder",
+            "i_want": "een gebruiker toevoegen",
+            "so_that": "deze toegang krijgt tot het systeem"
+        },
+        "description": "",
+        "acceptance_criteria": []
+    },
+    {
+        "id": "",
+        "title": "Gebruiker bekijken",
+        "user_story": {
+            "as_a": "beheerder",
+            "i_want": "gebruikers bekijken",
+            "so_that": "ik inzicht heb in de toegang tot het systeem"
+        },
+        "description": "",
+        "acceptance_criteria": []
+    },
+    {
+        "id": "",
+        "title": "Gebruiker wijzigen",
+        "user_story": {
+            "as_a": "beheerder",
+            "i_want": "gebruikersgegevens wijzigen",
+            "so_that": "deze actueel blijven"
+        },
+        "description": "",
+        "acceptance_criteria": []
+    },
+    {
+        "id": "",
+        "title": "Gebruiker blokkeren",
+        "user_story": {
+            "as_a": "beheerder",
+            "i_want": "een gebruiker blokkeren",
+            "so_that": "ik de toegang tijdelijk kan beperken"
+        },
+        "description": "",
+        "acceptance_criteria": []
+    },
+    {
+        "id": "",
+        "title": "Gebruiker verwijderen",
+        "user_story": {
+            "as_a": "beheerder",
+            "i_want": "een gebruiker verwijderen",
+            "so_that": "de toegang definitief wordt beëindigd"
+        },
+        "description": "",
+        "acceptance_criteria": []
+    },
+    {
+        "id": "",
+        "title": "Product toevoegen",
+        "user_story": {
+            "as_a": "magazijnmedewerker",
+            "i_want": "magazijnmedewerker",
+            "so_that": "het assortiment actueel blijft"
+        },
+        "description": "",
+        "acceptance_criteria": []
+    },
+    {
+        "id": "",
+        "title": "Product bekijken",
+        "user_story": {
+            "as_a": "magazijnmedewerker",
+            "i_want": "producten bekijken",
+            "so_that": "ik inzicht heb in het assortiment"
+        },
+        "description": "",
+        "acceptance_criteria": []
+    },
+    {
+        "id": "",
+        "title": "Product wijzigen",
+        "user_story": {
+            "as_a": "senior medewerker",
+            "i_want": "productgegevens wijzigen",
+            "so_that": "fouten worden hersteld"
+        },
+        "description": "",
+        "acceptance_criteria": []
+    },
+    {
+        "id": "",
+        "title": "Product verwijderen",
+        "user_story": {
+            "as_a": "senior medewerker",
+            "i_want": "producten verwijderen",
+            "so_that": "verouderde of foutieve artikelen niet beschikbaar blijven"
+        },
+        "description": "",
+        "acceptance_criteria": []
+    },
+    {
+        "id": "",
+        "title": "Producten categoriseren",
+        "user_story": {
+            "as_a": "magazijnmedewerker",
+            "i_want": "producten in categorieën indelen",
+            "so_that": "het overzichtelijk blijft"
+        },
+        "description": "",
+        "acceptance_criteria": []
+    },
+    {
+        "id": "",
+        "title": "Notificatie bij bijna lege categorie",
+        "user_story": {
+            "as_a": "magazijnmedewerker",
+            "i_want": "een notificatie ontvangen wanneer een categorie bijna leeg is",
+            "so_that": "ik op tijd kan bijbestellen"
+        },
+        "description": "",
+        "acceptance_criteria": []
+    },
+    {
+        "id": "",
+        "title": "Contract toevoegen",
+        "user_story": {
+            "as_a": "medewerker",
+            "i_want": "een contract toevoegen",
+            "so_that": "de lease officieel wordt vastgelegd"
+        },
+        "description": "",
+        "acceptance_criteria": []
+    },
+    {
+        "id": "",
+        "title": "Contract bekijken",
+        "user_story": {
+            "as_a": "medewerker",
+            "i_want": "contracten bekijken",
+            "so_that": "ik inzicht heb in de lopende overeenkomsten"
+        },
+        "description": "",
+        "acceptance_criteria": []
+    },
+    {
+        "id": "",
+        "title": "Contract wijzigen",
+        "user_story": {
+            "as_a": "senior medewerker",
+            "i_want": "contracten wijzigen",
+            "so_that": "wijzigingen correct worden verwerkt"
+        },
+        "description": "",
+        "acceptance_criteria": []
+    },
+    {
+        "id": "",
+        "title": "Contract beëindigen",
+        "user_story": {
+            "as_a": "senior medewerker",
+            "i_want": "contracten beëindigen",
+            "so_that": "verplichtingen correct worden afgesloten"
+        },
+        "description": "",
+        "acceptance_criteria": []
+    },
+    {
+        "id": "",
+        "title": "Contract filteren",
+        "user_story": {
+            "as_a": "medewerker",
+            "i_want": "contracten filteren op klant, product of looptijd",
+            "so_that": "ik snel de juiste informatie vind"
+        },
+        "description": "",
+        "acceptance_criteria": []
+    },
+    {
+        "id": "",
+        "title": "Overzicht openstaande contracten",
+        "user_story": {
+            "as_a": "beheerder",
+            "i_want": "een overzicht van openstaande contracten bekijken",
+            "so_that": "ik inzicht heb in lopende verplichtingen"
+        },
+        "description": "",
+        "acceptance_criteria": []
+    },
+    {
+        "id": "",
+        "title": "Financiële rapportages",
+        "user_story": {
+            "as_a": "beheerder",
+            "i_want": "rapportages van inkomsten per maand, kwartaal en jaar bekijken",
+            "so_that": "ik de bedrijfsvoering kan sturen"
+        },
+        "description": "",
+        "acceptance_criteria": []
+    },
+    {
+        "id": "",
+        "title": "Wachtwoord wijzigen",
+        "user_story": {
+            "as_a": "gebruiker",
+            "i_want": "mijn wachtwoord wijzigen",
+            "so_that": "mijn account veilig blijft"
+        },
+        "description": "",
+        "acceptance_criteria": []
+    },
+    {
+        "id": "",
+        "title": "Privacy en beveiliging",
+        "user_story": {
+            "as_a": "beheerder",
+            "i_want": "dat klant- en contractgegevens veilig zijn",
+            "so_that": "de privacy gewaarborgd is"
+        },
+        "description": "",
+        "acceptance_criteria": []
+    }
+]

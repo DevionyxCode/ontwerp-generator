@@ -255,6 +255,7 @@ function deleteStory(index){
 
 function saveStories() {
     localStorage.setItem("userStories", JSON.stringify(stories));
+    console.log(stories);
     renderStories();
 }
 
@@ -320,6 +321,7 @@ function copyStory(index) {
 
 // Download .txt
 downloadTxtBtn.addEventListener("click", () => {
+    console.log(stories)
     fetch("http://127.0.0.1:8090/api/userstories/generate/txt", {
         method: "POST",
         headers: {"Content-Type": "application/json"},

@@ -64,9 +64,20 @@ class DrawioClassDiagramGenerator:
 
         # attributes
         for i, attr in enumerate(cls.get("attributes", [])):
+            if isinstance(attr, dict):
+                # voorbeeld: "- id : int" bij private
+                vis_symbol = {
+                    "public": "+",
+                    "private": "-",
+                    "protected": "#"
+                }.get(attr.get("visibility", "public"), "")
+                attr_str = f'{vis_symbol} {attr["name"]} : {attr["type"]}'
+            else:
+                attr_str = str(attr)
+
             cells.append(
-                f'<mxCell id="{cell_id}" value="{self._escape(attr)}" style="{member_style}" vertex="1" parent="{container_id}">'
-                f'<mxGeometry x="0" y="{title_h + separator_h + i*line_h}" width="{self.class_width}" height="{line_h}" as="geometry"/>'
+                f'<mxCell id="{cell_id}" value="{self._escape(attr_str)}" style="{member_style}" vertex="1" parent="{container_id}">'
+                f'<mxGeometry x="0" y="{title_h + separator_h + i * line_h}" width="{self.class_width}" height="{line_h}" as="geometry"/>'
                 f'</mxCell>'
             )
             cell_id += 1

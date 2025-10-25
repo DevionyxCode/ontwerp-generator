@@ -1,10 +1,14 @@
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import Response
+from fastapi.responses import Response, JSONResponse
 from pydantic import BaseModel
 from core.classdiagram.compiler import DrawioClassDiagramGenerator
+from core.classdiagram.userstorietoclassdiagram import userstories_to_classdiagram
 from typing import List, Dict
 
 router = APIRouter(tags=["CLASSDIAGRAM"])
+
+class UserStoryInput(BaseModel):
+    data: List[Dict]  # JSON user stories
 
 
 class classInput(BaseModel):
@@ -26,3 +30,15 @@ def generate_class(input_data: classInput):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@router.post("/userstorietoclassdiagram")
+def compile_userstories(input_data: UserStoryInput):
+    """
+    Zet een lijst van user stories om naar use-case JSON structuur.
+    """
+    try:
+        result = userstories_to_classdiagram(input_data.data)
+        print(result)
+        return JSONResponse(content=result)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Fout bij compileren van user stories: {str(e)}")

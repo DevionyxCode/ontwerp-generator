@@ -117,7 +117,48 @@
     .btn:hover {
         background-color: #39549f;
     }
-
+    .container {
+        display: flex;
+        gap: 20px;
+        padding: 20px;
+    }
+    .classes, .relations {
+        background: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        flex: 1;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+    .class-card {
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+        background: #f9f9f9;
+    }
+    .class-card h3 {
+        margin-top: 0;
+    }
+    ul {
+        padding-left: 20px;
+    }
+    button {
+        margin-top: 5px;
+        padding: 5px 10px;
+        border-radius: 5px;
+        border: none;
+        background: #4b6cb7;
+        color: white;
+        cursor: pointer;
+    }
+    button:hover {
+        background: #39549f;
+    }
+    input, select {
+        padding: 5px;
+        margin-top: 5px;
+    }
 </style>
 </head>
 <body>
@@ -134,17 +175,55 @@
         <a href="/usecases">Usecasediagram</a>
     </nav>
     <div class="header-right">
-        <button class="btn" id="openModalBtn">Generate</button>
+        <button class="btn" id="editDiagramBtn">Edit Diagram</button>
+        <button class="btn" id="generateFromUserstoriesBtn">Generate from Userstories</button>
         <button class="btn" id="generateClassDiagramAI">Generate via AI</button>
     </div>
 </header>
 
-<div id="drawioContainer">
-    <iframe id="drawioIframe"
-        src="https://embed.diagrams.net/?embed=1&ui=atlas&spin=1&proto=json&noSaveBtn=1&noExitBtn=1&saveAndExit=0&ui=dark">
-    </iframe>
+<div class="container">
+    <div class="classes">
+        <h2>Classes</h2>
+        <button onclick="addClass()">Add Class</button>
+        <div id="classesUI"></div>
+    </div>
+    <div class="relations">
+        <h2>Relations</h2>
+
+        <!-- Dropdowns voor nieuwe relatie -->
+        <div id="addRelationUI">
+            <select id="relationFrom"></select>
+            →
+            <select id="relationTo"></select>
+            <select id="relationType">
+                <option value="association">association</option>
+                <option value="aggregation">aggregation</option>
+                <option value="composition">composition</option>
+                <option value="dependency">dependency</option>
+            </select>
+            <button id="addRelationBtn">Add Relation</button>
+        </div>
+
+        <!-- Hier komen de bestaande relaties -->
+        <div id="relationsUI"></div>
+    </div>
 </div>
 
+<div id="drawioOverlay" style="
+    display:none;
+    position:absolute;
+    top:60px; /* onder header */
+    left:0;
+    width:100%;
+    height:calc(100vh - 60px);
+    background:#fff;
+    z-index:1000;
+">
+    <iframe id="drawioIframe"
+        src="https://embed.diagrams.net/?embed=1&ui=atlas&spin=1&proto=json&noSaveBtn=1&noExitBtn=1&saveAndExit=0&ui=dark"
+        style="width:100%; height:100%; border:none;">
+    </iframe>
+</div>
 <div class="modal" id="jsonModal">
     <div class="modal-content">
         <h2>JSON Input</h2>
@@ -246,75 +325,22 @@
         <button class="btn" id="generateBtn">Generate Class Diagram</button>
     </div>
 </div>
-
 <script>
-const openModalBtn = document.getElementById("openModalBtn");
-const modal = document.getElementById("jsonModal");
-const generateBtn = document.getElementById("generateBtn");
-const jsonInput = document.getElementById("jsonInput");
-const iframe = document.getElementById("drawioIframe");
+function updateClassDiagramData(newData) {
+    classDiagramData = newData; // update globale variable
+    localStorage.setItem("classDiagramJSON", JSON.stringify(classDiagramData, null, 2)); // update localStorage
+    renderUI(); // update UI
+}
 
-// Load saved JSON from localStorage
-window.addEventListener("DOMContentLoaded", () => {
-    const savedJson = localStorage.getItem("classDiagramJSON");
-    if (savedJson) {
-        jsonInput.value = savedJson;
-    }
-});
-
-// Open modal
-openModalBtn.addEventListener("click", () => {
-    modal.style.display = "flex";
-});
-
-// Generate Class Diagram
-generateBtn.addEventListener("click", async () => {
-    try {
-        const jsonData = JSON.parse(jsonInput.value);
-
-        // Save JSON to localStorage
-        localStorage.setItem("classDiagramJSON", JSON.stringify(jsonData));
-
-        const response = await fetch("http://127.0.0.1:8090/api/classdiagram/generate", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ data: jsonData })
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Server error: ${response.status} - ${errorText}`);
-        }
-
-        const xml = await response.text();
-
-        // Send XML to Draw.io iframe
-        iframe.contentWindow.postMessage(
-            JSON.stringify({ action: 'load', autosave: 1, xml: xml }),
-            '*'
-        );
-
-        modal.style.display = "none"; // Close modal
-    } catch (err) {
-        alert("Fout: " + err.message);
-    }
-});
-
-// Click outside modal closes it
-window.addEventListener("click", (e) => {
-    if (e.target == modal) {
-        modal.style.display = "none";
-    }
-});
 </script>
 <script>
+// ---- Generate Class Diagram via AI ----
 const generateAiBtn = document.getElementById("generateClassDiagramAI");
 
-// Functie om de AI request te sturen
 generateAiBtn.addEventListener("click", async () => {
     try {
         const erdJson = localStorage.getItem("erdJson");
-        const apiKey = localStorage.getItem("apiKey"); // API key moet je eerst opslaan op home page
+        const apiKey = localStorage.getItem("apiKey");
 
         if (!erdJson) throw new Error("Geen ERD JSON gevonden in localStorage!");
         if (!apiKey) throw new Error("Geen API Key gevonden in localStorage!");
@@ -336,15 +362,345 @@ generateAiBtn.addEventListener("click", async () => {
         const data = await response.json();
         console.log("Class Diagram AI:", data.class_diagram);
 
-        // Optioneel: direct opslaan in localStorage
-        localStorage.setItem("classDiagramJSON", data.class_diagram);
+        // Update UI data object
+        classDiagramData = data.class_diagram;
+        renderUI();
 
-        alert("Class Diagram via AI gegenereerd en opgeslagen in localStorage!");
+        // Optioneel opslaan
+        localStorage.setItem("classDiagramJSON", JSON.stringify(classDiagramData, null, 2));
+
+        alert("✅ Class Diagram via AI gegenereerd en UI bijgewerkt!");
 
     } catch (err) {
         alert("Fout bij genereren: " + err.message);
     }
 });
+</script>
+
+<script>
+async function generateClassDiagramFromUserStories() {
+    try {
+        const stories = JSON.parse(localStorage.getItem("userStories") || "[]");
+        if (!stories.length) {
+            alert("Geen user stories gevonden in localStorage!");
+            return;
+        }
+
+        const response = await fetch("http://127.0.0.1:8090/api/classdiagram/userstorietoclassdiagram", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ data: stories })
+        });
+
+        if (!response.ok) {
+            const text = await response.text();
+            throw new Error(`Server error: ${response.status} - ${text}`);
+        }
+
+        const result = await response.json();
+        let diagramData;
+        if (typeof result === "string") diagramData = JSON.parse(result);
+        else diagramData = result;
+
+        // ✅ Update via helper
+        updateClassDiagramData(diagramData);
+
+        alert("✅ Class Diagram vanuit User Stories gegenereerd en UI bijgewerkt!");
+
+    } catch (err) {
+        console.error(err);
+        alert("❌ Fout bij genereren: " + err.message);
+    }
+}
+
+
+document.getElementById("generateFromUserstoriesBtn")
+        .addEventListener("click", generateClassDiagramFromUserStories);
+</script>
+
+<script>
+let classDiagramData = {
+    classes: [],
+    relations: []
+};
+
+// --- Load data from localStorage or default JSON ---
+function loadData() {
+    const saved = localStorage.getItem("classDiagramJSON");
+    if(saved) {
+        classDiagramData = JSON.parse(saved);
+    } else {
+        // Default JSON
+        classDiagramData = {
+            "classes": [
+                {"id":"Medewerker","name":"Medewerker","attributes":[],"methods":["een_klant_toevoegen()","klantgegevens_bekijken()","een_contract_toevoegen()","contracten_bekijken()","contracten_filteren_op_klant_product_of_looptijd()"]},
+                {"id":"Senior medewerker","name":"Senior medewerker","attributes":[],"methods":["klantgegevens_wijzigen()","klanten_verwijderen()","productgegevens_wijzigen()","producten_verwijderen()","contracten_wijzigen()","contracten_beëindigen()"]},
+                {"id":"Beheerder","name":"Beheerder","attributes":[],"methods":["een_gebruiker_toevoegen()","gebruikers_bekijken()","gebruikersgegevens_wijzigen()","een_gebruiker_blokkeren()","een_gebruiker_verwijderen()","een_overzicht_van_openstaande_contracten_bekijken()","rapportages_van_inkomsten_per_maand_kwartaal_en_jaar_bekijken()","dat_klant_en_contractgegevens_veilig_zijn()"]},
+                {"id":"Magazijnmedewerker","name":"Magazijnmedewerker","attributes":[],"methods":["magazijnmedewerker()","producten_bekijken()","producten_in_categorieën_indelen()","een_notificatie_ontvangen_wanneer_een_categorie_bijna_leeg_is()"]},
+                {"id":"Gebruiker","name":"Gebruiker","attributes":[],"methods":["mijn_wachtwoord_wijzigen()"]}
+            ],
+            "relations":[
+                {"from":"Beheerder","to":"Gebruiker","type":"association"},
+                {"from":"Magazijnmedewerker","to":"Medewerker","type":"association"}
+            ]
+        };
+        localStorage.setItem("classDiagramJSON", JSON.stringify(classDiagramData, null, 2));
+    }
+    renderUI();
+}
+
+// --- Render UI vanuit localStorage ---
+function renderUI() {
+    const saved = localStorage.getItem("classDiagramJSON");
+    if(saved) {
+        classDiagramData = JSON.parse(saved);
+    }
+
+    const classesDiv = document.getElementById("classesUI");
+    const relDiv = document.getElementById("relationsUI");
+    classesDiv.innerHTML = "";
+    relDiv.innerHTML = "";
+
+    classDiagramData.classes.forEach(cls => {
+        const div = document.createElement("div");
+        div.className = "class-card";
+
+        // Class header
+        const h3 = document.createElement("h3");
+        h3.textContent = cls.name;
+        div.appendChild(h3);
+
+        // Attributes
+        const attrTitle = document.createElement("strong");
+        attrTitle.textContent = "Attributes:";
+        div.appendChild(attrTitle);
+
+        const attrList = document.createElement("ul");
+        cls.attributes.forEach(attr => {
+            const li = document.createElement("li");
+            li.textContent = attr + " ";
+            const btn = document.createElement("button");
+            btn.textContent = "x";
+            btn.addEventListener("click", () => removeAttribute(cls.id, attr));
+            li.appendChild(btn);
+            attrList.appendChild(li);
+        });
+        div.appendChild(attrList);
+
+        const addAttrBtn = document.createElement("button");
+        addAttrBtn.textContent = "Add Attribute";
+        addAttrBtn.addEventListener("click", () => addAttribute(cls.id));
+        div.appendChild(addAttrBtn);
+
+        // Methods
+        const methodTitle = document.createElement("strong");
+        methodTitle.textContent = "Methods:";
+        div.appendChild(methodTitle);
+
+        const methodList = document.createElement("ul");
+        cls.methods.forEach(method => {
+            const li = document.createElement("li");
+            li.textContent = method + " ";
+            const btn = document.createElement("button");
+            btn.textContent = "x";
+            btn.addEventListener("click", () => removeMethod(cls.id, method));
+            li.appendChild(btn);
+            methodList.appendChild(li);
+        });
+        div.appendChild(methodList);
+
+        const addMethodBtn = document.createElement("button");
+        addMethodBtn.textContent = "Add Method";
+        addMethodBtn.addEventListener("click", () => addMethod(cls.id));
+        div.appendChild(addMethodBtn);
+
+        // Delete class button
+        const delClassBtn = document.createElement("button");
+        delClassBtn.textContent = "Delete Class";
+        delClassBtn.addEventListener("click", () => removeClass(cls.id));
+        div.appendChild(delClassBtn);
+
+        classesDiv.appendChild(div);
+    });
+
+    // Relations
+    classDiagramData.relations.forEach((rel, idx) => {
+        const div = document.createElement("div");
+        div.textContent = `${rel.from} → ${rel.to} (${rel.type}) `;
+        const btn = document.createElement("button");
+        btn.textContent = "x";
+        btn.addEventListener("click", () => removeRelation(idx));
+        div.appendChild(btn);
+        relDiv.appendChild(div);
+    });
+    // --- Vul relation dropdowns ---
+    const fromSelect = document.getElementById("relationFrom");
+    const toSelect = document.getElementById("relationTo");
+
+    if (fromSelect && toSelect) {
+        fromSelect.innerHTML = "";
+        toSelect.innerHTML = "";
+
+        classDiagramData.classes.forEach(cls => {
+            const optionFrom = document.createElement("option");
+            optionFrom.value = cls.id;
+            optionFrom.textContent = cls.name;
+            fromSelect.appendChild(optionFrom);
+
+            const optionTo = document.createElement("option");
+            optionTo.value = cls.id;
+            optionTo.textContent = cls.name;
+            toSelect.appendChild(optionTo);
+        });
+    }
+
+}
+
+// --- CRUD functies met directe localStorage update ---
+function addClass() {
+    const name = prompt("Class name?");
+    if(!name) return;
+    const id = name;
+    const saved = JSON.parse(localStorage.getItem("classDiagramJSON"));
+    saved.classes.push({id,name,attributes:[],methods:[]});
+    localStorage.setItem("classDiagramJSON", JSON.stringify(saved, null, 2));
+    renderUI();
+}
+function removeClass(id) {
+    const saved = JSON.parse(localStorage.getItem("classDiagramJSON"));
+    saved.classes = saved.classes.filter(c=>c.id!==id);
+    saved.relations = saved.relations.filter(r=>r.from!==id && r.to!==id);
+    localStorage.setItem("classDiagramJSON", JSON.stringify(saved, null, 2));
+    renderUI();
+}
+function addAttribute(classId) {
+    const val = prompt("Attribute (name: type)?");
+    if(!val) return;
+    const saved = JSON.parse(localStorage.getItem("classDiagramJSON"));
+    const cls = saved.classes.find(c=>c.id===classId);
+    cls.attributes.push(val);
+    localStorage.setItem("classDiagramJSON", JSON.stringify(saved, null, 2));
+    renderUI();
+}
+function removeAttribute(classId, attr) {
+    const saved = JSON.parse(localStorage.getItem("classDiagramJSON"));
+    const cls = saved.classes.find(c=>c.id===classId);
+    cls.attributes = cls.attributes.filter(a=>a!==attr);
+    localStorage.setItem("classDiagramJSON", JSON.stringify(saved, null, 2));
+    renderUI();
+}
+function addMethod(classId) {
+    const val = prompt("Method name?");
+    if(!val) return;
+    const saved = JSON.parse(localStorage.getItem("classDiagramJSON"));
+    const cls = saved.classes.find(c=>c.id===classId);
+    cls.methods.push(val);
+    localStorage.setItem("classDiagramJSON", JSON.stringify(saved, null, 2));
+    renderUI();
+}
+function removeMethod(classId, method) {
+    const saved = JSON.parse(localStorage.getItem("classDiagramJSON"));
+    const cls = saved.classes.find(c=>c.id===classId);
+    cls.methods = cls.methods.filter(m=>m!==method);
+    localStorage.setItem("classDiagramJSON", JSON.stringify(saved, null, 2));
+    renderUI();
+}
+function addRelation() {
+    const from = prompt("From class id?");
+    const to = prompt("To class id?");
+    const type = prompt("Relation type (association, aggregation, composition, dependency)?","association");
+    if(!from || !to || !type) return;
+    const saved = JSON.parse(localStorage.getItem("classDiagramJSON"));
+    saved.relations.push({from,to,type});
+    localStorage.setItem("classDiagramJSON", JSON.stringify(saved, null, 2));
+    renderUI();
+}
+function removeRelation(idx) {
+    const saved = JSON.parse(localStorage.getItem("classDiagramJSON"));
+    saved.relations.splice(idx,1);
+    localStorage.setItem("classDiagramJSON", JSON.stringify(saved, null, 2));
+    renderUI();
+}
+
+// --- Save explicitly ---
+function saveToLocalStorage() {
+    const saved = JSON.parse(localStorage.getItem("classDiagramJSON"));
+    localStorage.setItem("classDiagramJSON", JSON.stringify(saved, null, 2));
+    alert("Saved to localStorage!");
+}
+
+// ---- Draw.io Editor ----
+const editBtn = document.getElementById("editDiagramBtn");
+const overlay = document.getElementById("drawioOverlay");
+const iframe = document.getElementById("drawioIframe");
+
+let drawioReady = false;
+let pendingXML = null;
+let editorOpen = false;
+
+window.addEventListener('message', (event) => {
+  if (!event.data) return;
+  try {
+    const msg = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+    if (msg.event === "init") {
+      drawioReady = true;
+      if (pendingXML) {
+        iframe.contentWindow.postMessage(JSON.stringify({ action: 'load', autosave: 1, xml: pendingXML }), '*');
+        pendingXML = null;
+      }
+    }
+  } catch(e){}
+});
+
+function loadDrawioXML(xml) {
+  if (drawioReady) {
+    iframe.contentWindow.postMessage(JSON.stringify({ action: 'load', autosave: 1, xml: xml }), '*');
+  } else {
+    pendingXML = xml;
+  }
+}
+
+editBtn.addEventListener("click", async () => {
+  if (!editorOpen) {
+    try {
+      const saved = JSON.parse(localStorage.getItem("classDiagramJSON"));
+      const response = await fetch("http://127.0.0.1:8090/api/classdiagram/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ data: saved })
+      });
+      if (!response.ok) throw new Error("Fout bij genereren diagram");
+
+      const xml = await response.text();
+      overlay.style.display = "block";
+      editBtn.textContent = "Close Editor";
+      editorOpen = true;
+      loadDrawioXML(xml);
+    } catch(err) {
+      console.error(err);
+      alert("Fout bij openen diagram: " + err.message);
+    }
+  } else {
+    overlay.style.display = "none";
+    editBtn.textContent = "Edit Diagram";
+    editorOpen = false;
+  }
+});
+
+document.getElementById("addRelationBtn").addEventListener("click", () => {
+    const from = document.getElementById("relationFrom").value;
+    const to = document.getElementById("relationTo").value;
+    const type = document.getElementById("relationType").value;
+    if(!from || !to || !type) return;
+
+    const saved = JSON.parse(localStorage.getItem("classDiagramJSON"));
+    saved.relations.push({from, to, type});
+    localStorage.setItem("classDiagramJSON", JSON.stringify(saved, null, 2));
+    renderUI();
+});
+
+// --- Init ---
+loadData();
 </script>
 
 </body>
