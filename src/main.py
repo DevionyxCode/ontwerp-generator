@@ -1,8 +1,9 @@
 from fastapi import FastAPI, Request, Form
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from api.router import router as api_router
+import os
 
 app = FastAPI()
 
@@ -47,3 +48,10 @@ def read_root(request: Request):
 @app.get("/usecases", response_class=HTMLResponse)
 def read_root(request: Request):
     return templates.TemplateResponse("usecases.html", {"request": request})
+
+@app.get("/download-pdf")
+def download_pdf():
+    file_path = "files/Narrativeproducttoevoegen.pdf"
+    if os.path.exists(file_path):
+        return FileResponse(file_path, media_type='application/pdf', filename="Narrativeproducttoevoegen.pdf")
+    return {"error": "Bestand niet gevonden"}

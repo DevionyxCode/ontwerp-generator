@@ -1,127 +1,48 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="nl">
 <head>
 <meta charset="UTF-8">
-<title>Devionyx Generator</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Devionyx Generator — Design Examen Cheat Sheet</title>
 <style>
-    body, html {
-        margin: 0;
-        padding: 0;
-        height: 100%;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background-color: #f4f4f9;
-        color: #333;
-        overflow: hidden;
-    }
+    /* Basis layout (origineel + extra content) */
+    body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f9; color: #111; }
+    header { background-color: #1e1e2f; color: #fff; padding: 15px 20px; display: flex; align-items: center; gap: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);}
+    header h1 { margin: 0; font-size: 20px; }
+    nav { display: flex; gap: 12px; margin-left: 18px; }
+    nav a { color: #fff; text-decoration: none; padding: 6px 10px; border-radius: 6px; }
+    nav a:hover { background-color: #39549f; }
+    .header-right { margin-left: auto; }
+    .btn { padding: 10px 16px; font-size: 14px; background-color: #4b6cb7; color: #fff; border: none; border-radius: 8px; cursor: pointer; }
+    .container { padding: 18px; max-width: 1100px; margin: 18px auto; background: #fff; border-radius: 10px; box-shadow: 0 6px 22px rgba(28,31,41,0.06); overflow: auto; }
+    .row { display: flex; gap: 18px; }
+    .col { flex: 1; }
+    p.small { font-size: 13px; color: #666; }
 
-    /* Header */
-    header {
-        background-color: #1e1e2f;
-        color: #fff;
-        padding: 15px 30px;
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    }
+    /* Inputs and small UI */
+    input[type=text], textarea { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; }
+    label { display:block; margin-bottom:6px; font-weight:600; }
 
-    header h1 {
-        margin: 0;
-        font-size: 22px;
-    }
+    /* Guide styling */
+    h2 { margin-top: 0; }
+    ol { margin-left: 18px; }
+    .checklist { display: grid; gap:8px; }
 
-    nav {
-        display: flex;
-        gap: 15px;
-        margin-left: 20px;
-    }
+    /* Sprint table */
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { padding: 8px 10px; border: 1px solid #e6e6ef; text-align: left; }
+    th { background: #f6f7fb; }
+    tfoot td { font-weight: 700; }
 
-    nav a {
-        color: #fff;
-        text-decoration: none;
-        padding: 8px 12px;
-        border-radius: 5px;
-        transition: background 0.3s;
-    }
+    /* Small timer UI */
+    .story { display:flex; gap:8px; align-items:center; padding:8px; border-radius:8px; border:1px solid #eee; }
+    .timer { min-width:84px; text-align:center; }
 
-    nav a:hover {
-        background-color: #39549f;
-    }
-
-    .header-right {
-        margin-left: auto;
-    }
-
-    /* Fullscreen iframe */
-    #drawioContainer {
-        width: 100vw;
-        height: calc(100vh - 65px); /* header hoogte */
-    }
-
-    #drawioIframe {
-        width: 100%;
-        height: 100%;
-        border: none;
-    }
-
-    /* Modal */
-    .modal {
-        display: none;
-        position: fixed;
-        z-index: 1000;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        overflow: auto;
-        background-color: rgba(0,0,0,0.5);
-        justify-content: center;
-        align-items: center;
-    }
-
-    .modal-content {
-        background-color: #fff;
-        padding: 25px;
-        border-radius: 10px;
-        width: 80%;
-        max-width: 800px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
-    }
-
-    textarea {
-        width: 100%;
-        height: 200px;
-        padding: 15px;
-        font-family: monospace;
-        font-size: 14px;
-        border: 1px solid #ccc;
-        border-radius: 8px;
-        resize: vertical;
-    }
-
-    .btn {
-        padding: 12px 25px;
-        font-size: 16px;
-        background-color: #4b6cb7;
-        color: #fff;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        align-self: flex-start;
-    }
-
-    .btn:hover {
-        background-color: #39549f;
-    }
-
+    /* Print friendly */
+    @media print { body { background: #fff; } .container { box-shadow:none; } nav, header { display:none; } }
 </style>
 </head>
 <body>
-
 <header>
     <h1>Devionyx Generator</h1>
     <nav>
@@ -138,21 +59,235 @@
     </div>
 </header>
 
-<p>dit moet een google ai studio api key zijn je kan 250 requests per dag doen</p>
-<input type="text" id="apiKeyInput" placeholder="Voer je API Key in">
-<button id="saveApiKeyBtn">Opslaan</button>
+<div class="container" id="home">
+    <h2>Examen Cheat Sheet — Designopdracht</h2>
+    <p class="small">Onderstaande pagina is bedoeld als kant-en-klare handleiding en checklist voor je ontwerp examen. Je kunt dit lokaal bewaren of printen.</p>
+
+    <section aria-labelledby="apikey">
+        <h3 id="apikey">Google AI Studio API Key</h3>
+        <p class="small">Je kunt hier tijdelijk je API key bewaren (localStorage). Gebruik maximaal 250 requests/dag zoals besproken.</p>
+        <input type="text" id="apiKeyInput" placeholder="Voer je API Key in">
+        <div style="margin-top:8px; display:flex; gap:8px;">
+            <button id="saveApiKeyBtn" class="btn">Opslaan</button>
+            <button id="clearApiKeyBtn" class="btn" style="background:#777;">Verwijderen</button>
+        </div>
+    </section>
+
+    <!-- Handleiding: stap voor stap -->
+    <section style="margin-top:18px;" id="guide">
+        <h3>Stap-voor-stap handleiding (wat je moet doen)</h3>
+        <ol>
+            <li><strong>Voorbereiding (30 min)</strong>
+                <div class="checklist">
+                    <label><input type="checkbox" id="ck_readbrief"> Lees de examenopdracht en noteer alle verplichte onderdelen.</label>
+                    <label><input type="checkbox" id="ck_setup"> Maak dit cheat-sheet bestand klaar, zorg dat je timer werkt en print indien nodig.</label>
+                    <label><input type="checkbox" id="ck_tools"> Zorg dat je tools (draw.io, editor, kladpapier) klaarstaan.</label>
+                </div>
+            </li>
+            <li><strong>Sprintplanning</strong>
+                <p>Maak je <em>Product Backlog</em> met ~24 user stories (±15 min per stuk). Maak sprints van de onderdelen (sprint 1: scrumboard en userstories 90 - 120min, sprint 2: usecase diagram narratives en wireframes 210 - 240min sprint 3: Erd 90 - 120min)(3–4 sprints over 2 dagen / max 14 uur).</p>
+            </li>
+            <li><strong>Sprint uitvoering</strong>
+                <p>Voor elke story: plan (Sprint Backlog), start timer (In Progress), werk, doe korte review (Review), en markeer Done. Noteer geplande en werkelijke tijden. voorbeeld(sprints/sprints backlog gebruik de tijden van de sprints hierboven dus bijvoorbeeld 90min dit is een schatting van hoelang je erover gaat doen houdt het realistisch begin je met een sprint start je de timer ben je klaar stop je hem die tijd afgerond bijv 80 min naar boven voer je in bij in progress en dan lever je hem opnieuw in dan het zelfde met review bijv 10 min review en dan lever je hem in dan sleep je hem naar done tel je de tijd bij elkaar op hoelang je in totaal bent bezig bent geweest dus 90 minuten let op dit mag lager of hoger zijn dan de sprints/sprintsbacklog omdat de tijd daar een schatting is)</p>
+            </li>
+            <li><strong>Reflectie en totaal</strong>
+                <p>Tel onderaan je tabel de werkelijke tijden op en schrijf een korte reflectie (wat ging goed / wat niet).</p>
+            </li>
+            <li><strong>Narratives opstellen</strong>
+                <p>Voor elke narrative: kies een Use Case die je gaat uitwerken (bijv. “Gebruiker blokkeren”). Noteer de titel en het End Goal. Voeg kort een beschrijving toe van wat er gebeurt (optioneel, maar helpt de lezer).</p>
+                <p>Vul de metadata in:</p>
+                <ul>
+                    <li><strong>Version No:</strong> optioneel voor examen, kan je leeg laten.</li>
+                    <li><strong>Actors:</strong> altijd invullen, wie voert de actie uit.</li>
+                    <li><strong>Preconditions:</strong> belangrijk, noteer wat er moet gelden voordat de flow start.</li>
+                    <li><strong>Postconditions:</strong> goed om te hebben, laat zien wat het resultaat van de Use Case is.</li>
+                </ul>
+                <p><strong>Basic Flow:</strong> dit is het hart van je narrative. Noteer stap-voor-stap wat de gebruiker doet en wat het systeem doet. Altijd invullen, dit toont aan dat je de logica begrijpt.</p>
+                <p><strong>Alternate Flow:</strong> goed om te hebben voor extra punten, maar niet perse nodig. Gebruik het als er verschillende manieren zijn waarop een taak kan verlopen, bijvoorbeeld: “Meerdere gebruikers tegelijk selecteren” of “Een gebruiker al geblokkeerd”.</p>
+                <p><strong>Exception Flow:</strong> alleen invullen als er echte uitzonderingen of foutmeldingen zijn, bijvoorbeeld: “Beheerder probeert zichzelf te blokkeren → foutmelding”. Niet verplicht; alleen invullen als het examen dit vraagt.</p>
+                <a href="/download-pdf">Voorbeeld narrative</a>
+            </li>
+            <li><strong>Tips</strong>
+                <p>In de opdracht staan verplichte delen waarschijnlijk in een lijst pak deze onderdelen en verdeel ze in sprints</p>
+                <p>Vergeet naast de erd erin of ernaast in een wordt document niet een kleine tot midel tekst te schrijven over belangrijke gegevens encryptie privacy wet enz heb het over gegevens die je er bijvoorbeeld uit heb gelaten (politieke voorkeur bns nummern enz) zeg bijvoorbeeld dat je ze er niet in hebt gedaan omdat het tijdens een datalek gevaarkijk kan zijn aangezien het hele gevoelige gegevens zijn. je mag ze trouwens wel opslaan maar niet gebruiken. je kan dit altijd vragen/maken met chatgpt</p>
+                <p>Controleer de userstories usecase diagram narratives enzo extra ook de relaties van de erd moet je ff extra checken</p>
+                <p>Baseer alles op de userstories de docenten zullen kijken hoeveel van de userstories overeen komen met de rest van je werk en hoe realistisch het is. je usecase diagram zijn eigenlijk gewoon de functies en de actors van je userstories maar dan in een diagram. je narratives zijn eigenlijk gewoon gedetaileerde versies van de userstories. de erd is net ietsje anders maar baseer het objectief neem de hoofdprocessen van de applicatie en denk hierbij gewoon logisch na wat je wel en niet nodig hebt kwa data om op te slaan. gebruik in je erd trouwens alleen many-to-many en one-to-many one-to-one komt nauwlijks voor.</p>
+                <p>Baseer je wireframes op je narratives ze kijken hiernaar hoeveel van de narratives echt gebruikt wordt in het desgin van de wireframes. de wireframes mogen trouwens simpele schetsen zijn.</p>
+            </li>
+        </ol>
+    </section>
+
+    <!-- Sprint tabel + voorbeeld -->
+    <section style="margin-top:18px;" id="sprints">
+        <h3>Voorbeeld sprinttabel (vul zelf in)</h3>
+        <table id="sprintTable">
+            <thead>
+                <tr>
+                    <th>Sprint</th>
+                    <th>Beschrijving</th>
+                    <th>Gepland (min)</th>
+                    <th>In Progress (min)</th>
+                    <th>Review (min)</th>
+                    <th>Totaal (min)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>Scrumboard &amp; User stories</td>
+                    <td contenteditable="true">90</td>
+                    <td contenteditable="true">60</td>
+                    <td contenteditable="true">10</td>
+                    <td class="row-total">70</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>Use case + wireframes</td>
+                    <td contenteditable="true">210</td>
+                    <td contenteditable="true">190</td>
+                    <td contenteditable="true">20</td>
+                    <td class="row-total">210</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td>ERD</td>
+                    <td contenteditable="true">60</td>
+                    <td contenteditable="true">55</td>
+                    <td contenteditable="true">5</td>
+                    <td class="row-total">60</td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="2">Totaal</td>
+                    <td id="plannedTotal">480</td>
+                    <td></td>
+                    <td></td>
+                    <td id="actualTotal">460</td>
+                </tr>
+            </tfoot>
+        </table>
+        <div style="margin-top:10px; display:flex; gap:8px;">
+            <button class="btn" id="recalcBtn">Herbereken totalen</button>
+            <button class="btn" id="resetTableBtn" style="background:#777;">Reset voorbeeld</button>
+        </div>
+    </section>
+
+    <!-- User stories area + quick timer -->
+    <section style="margin-top:18px;" id="stories">
+        <h3>Quick user story timer (15 min standaard)</h3>
+        <div style="display:flex; gap:10px; align-items:center; margin-bottom:8px;">
+            <input type="text" id="storyInput" placeholder="Korte omschrijving user story (bijv. Wireframe header)">
+            <select id="storyDuration"><option value="15">15 min</option><option value="20">20 min</option><option value="25">25 min</option></select>
+            <button class="btn" id="addStoryBtn">Add</button>
+        </div>
+        <div id="storyList"></div>
+        <p class="small">Klik op <strong>Start</strong> om de timer te starten. Als je klaar bent klik je <strong>Done</strong> en noteer je de werkelijke tijd.</p>
+    </section>
+
+    <!-- Reflectie sectie -->
+    <section style="margin-top:18px;" id="reflection">
+        <h3>Reflectie (kort invulveld)</h3>
+        <textarea id="reflectionText" placeholder="Kort reflectiestuk: wat ging goed, wat minder, en wat ga je aanpassen?" rows="4"></textarea>
+    </section>
+
+    <div style="display:flex; gap:10px; margin-top:12px;">
+        <button class="btn" id="saveAllBtn">Sla alles op (localStorage)</button>
+        <button class="btn" id="printBtn" style="background:#2b8a3e;">Print / Export PDF</button>
+    </div>
+
+    <p style="margin-top:14px; font-size:13px; color:#666;">Tips: noteer altijd zowel gepland als werkelijk. Schrijf korte reflecties bij elke sprint — examinatoren lezen die graag.</p>
+</div>
 
 <script>
+// API key save
 const saveBtn = document.getElementById("saveApiKeyBtn");
-const input = document.getElementById("apiKeyInput");
+const clearBtn = document.getElementById("clearApiKeyBtn");
+const apiInput = document.getElementById("apiKeyInput");
 
-saveBtn.addEventListener("click", () => {
-    const key = input.value.trim();
-    if (!key) return alert("Voer een geldige API Key in!");
-    localStorage.setItem("apiKey", key);
-    alert("API Key opgeslagen in localStorage!");
+saveBtn.addEventListener('click', ()=>{
+    const key = apiInput.value.trim();
+    if(!key) return alert('Voer een geldige API Key in!');
+    localStorage.setItem('devionyx_api_key', key);
+    alert('API Key opgeslagen in localStorage!');
 });
-</script>
+clearBtn.addEventListener('click', ()=>{ localStorage.removeItem('devionyx_api_key'); apiInput.value=''; alert('API Key verwijderd'); });
+// Load if present
+const storedKey = localStorage.getItem('devionyx_api_key'); if(storedKey) apiInput.value = storedKey;
 
+// Sprint table helpers
+function recalcTotals(){
+    const tbody = document.querySelector('#sprintTable tbody');
+    let plannedSum = 0; let actualSum = 0;
+    tbody.querySelectorAll('tr').forEach(row => {
+        const planned = parseInt(row.cells[2].innerText) || 0;
+        const inprogress = parseInt(row.cells[3].innerText) || 0;
+        const review = parseInt(row.cells[4].innerText) || 0;
+        const total = inprogress + review;
+        row.querySelector('.row-total').innerText = total;
+        plannedSum += planned; actualSum += total;
+    });
+    document.getElementById('plannedTotal').innerText = plannedSum;
+    document.getElementById('actualTotal').innerText = actualSum;
+}
+
+document.getElementById('recalcBtn').addEventListener('click', recalcTotals);
+document.getElementById('resetTableBtn').addEventListener('click', ()=> location.reload());
+
+// Stories + timer
+const addBtn = document.getElementById('addStoryBtn');
+const storyList = document.getElementById('storyList');
+const storyInput = document.getElementById('storyInput');
+const storyDuration = document.getElementById('storyDuration');
+
+function createStoryEl(title, duration){
+    const id = 's_' + Math.random().toString(36).slice(2,9);
+    const div = document.createElement('div'); div.className = 'story'; div.id = id;
+    const label = document.createElement('div'); label.style.flex='1'; label.innerText = title;
+    const timerBox = document.createElement('div'); timerBox.className='timer'; timerBox.innerText = duration + ' min';
+    const startBtn = document.createElement('button'); startBtn.className='btn'; startBtn.style.padding='6px 8px'; startBtn.innerText='Start';
+    const doneBtn = document.createElement('button'); doneBtn.className='btn'; doneBtn.style.background='#2b8a3e'; doneBtn.style.padding='6px 8px'; doneBtn.innerText='Done';
+
+    let secondsLeft = duration * 60; let running=false; let interval=null; let actualSeconds=0;
+    function updateTimerText(){
+        const mins = Math.floor(secondsLeft/60); const secs = secondsLeft%60; timerBox.innerText = mins+':' + String(secs).padStart(2,'0');
+    }
+    startBtn.addEventListener('click', ()=>{
+        if(running) return;
+        running=true; actualSeconds=0; secondsLeft = duration*60; updateTimerText();
+        interval = setInterval(()=>{ secondsLeft--; actualSeconds++; updateTimerText(); if(secondsLeft<=0){ clearInterval(interval); running=false; alert('Tijd over voor: '+title); } },1000);
+    });
+    doneBtn.addEventListener('click', ()=>{
+        if(interval) clearInterval(interval); running=false; const usedMin = Math.ceil(actualSeconds/60)||0; timerBox.innerText = usedMin + ' min (gerealiseerd)';
+        // append to sprint table as 'small done' (na handmatige verwerking)
+    });
+
+    div.appendChild(label); div.appendChild(timerBox); div.appendChild(startBtn); div.appendChild(doneBtn);
+    return div;
+}
+
+addBtn.addEventListener('click', ()=>{
+    const t = storyInput.value.trim(); const d = parseInt(storyDuration.value,10);
+    if(!t) return alert('Voer een korte omschrijving in.');
+    const el = createStoryEl(t,d); storyList.prepend(el); storyInput.value='';
+});
+
+// Save/Print
+document.getElementById('saveAllBtn').addEventListener('click', ()=>{
+    const payload = {
+        sprintTable: document.querySelector('#sprintTable').outerHTML,
+        reflection: document.getElementById('reflectionText').value,
+        stories: Array.from(document.querySelectorAll('.story')).map(s=>({id:s.id, text: s.firstChild.innerText, timer: s.querySelector('.timer').innerText}))
+    };
+    localStorage.setItem('devionyx_cheatsheet_saved', JSON.stringify(payload));
+    alert('Gegevens opgeslagen (localStorage)');
+});
+
+// Print
+document.getElementById('printBtn').addEventListener('click', ()=> window.print());
+
+// On load: try to recalc
+recalcTotals();
+</script>
 </body>
 </html>
